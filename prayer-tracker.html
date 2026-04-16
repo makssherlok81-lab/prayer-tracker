@@ -519,6 +519,9 @@
       hStart.setDate(hStart.getDate()-1);
     }
     const hmStartKey=fmtKey(hStart);
+    // Load all days from Hijri month start to today
+    await loadMonthData(hStart.getFullYear(), hStart.getMonth());
+    if(hStart.getMonth() !== today.getMonth()) await loadMonthData(today.getFullYear(), today.getMonth());
     let fastStreak=0;
     const fd=new Date(today);
     for(let i=0;i<31;i++){
