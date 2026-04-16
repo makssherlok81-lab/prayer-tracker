@@ -184,7 +184,7 @@
     <div class="streak-block">
       <div class="fast-icon-big">🌙</div>
       <div>
-        <div><span class="streak-big fast" id="fastStreakNum">0</span><span class="streak-unit fast"> day fast</span></div>
+        <div><span class="streak-big fast" id="fastStreakNum">0</span><span class="streak-unit fast"> days fasted</span></div>
         <div class="streak-sub" id="fastStreakSub">This month's streak</div>
       </div>
     </div>
@@ -526,11 +526,10 @@
       if(k<hmStartKey||k<signupDate) break;
       if(k>todayKey){ fd.setDate(fd.getDate()-1); continue; }
       if(dayData[k]?.fasting) fastStreak++;
-      else break;
       fd.setDate(fd.getDate()-1);
     }
     document.getElementById('fastStreakNum').textContent=fastStreak;
-    document.getElementById('fastStreakSub').textContent=fastStreak===0?'This Hijri month':fastStreak===1?'Keep it going!':`${fastStreak} days this month`;
+    document.getElementById('fastStreakSub').textContent=fastStreak===0?'This Hijri month':fastStreak===1?'1 day so far':`${fastStreak} days this month`;
   }
 
   async function updateYearlyStats(){
