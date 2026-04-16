@@ -178,7 +178,7 @@
       <div id="fireWrap"></div>
       <div>
         <div><span class="streak-big" id="streakNum">0</span><span class="streak-unit"> day streak</span></div>
-        
+        <div class="streak-sub" id="streakSub"></div>
       </div>
     </div>
     <div class="streak-block">
@@ -520,9 +520,14 @@
       hStart.setDate(hStart.getDate()-1);
     }
     const hmStartKey=fmtKey(hStart);
-    // Load all days from Hijri month start to today
-    await loadMonthData(hStart.getFullYear(), hStart.getMonth());
-    if(hStart.getMonth() !== today.getMonth()) await loadMonthData(today.getFullYear(), today.getMonth());
+    // Load all Gregorian months that overlap with this Hijri month
+    const startM = hStart.getMonth(), endM = today.getMonth();
+    const startY = hStart.getFullYear(), endY = today.getFullYear();
+    for(let y=startY; y<=endY; y++){
+      const mFrom = (y===startY)?startM:0;
+      const mTo   = (y===endY)?endM:11;
+      for(let m=mFrom; m<=mTo; m++) await loadMonthData(y, m);
+    }
     let fastStreak=0;
     const fd=new Date(today);
     for(let i=0;i<31;i++){
