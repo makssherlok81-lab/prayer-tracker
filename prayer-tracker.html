@@ -178,14 +178,15 @@
       <div id="fireWrap"></div>
       <div>
         <div><span class="streak-big" id="streakNum">0</span><span class="streak-unit"> day streak</span></div>
-        <div class="streak-sub" id="streakSub">Start today — pray all five!</div>
+        
       </div>
     </div>
     <div class="streak-block">
       <div class="fast-icon-big">🌙</div>
       <div>
         <div><span class="streak-big fast" id="fastStreakNum">0</span><span class="streak-unit fast"> days fasted</span></div>
-        <div class="streak-sub" id="fastStreakSub">This month's streak</div>
+        <div class="streak-sub" id="fastStreakSub"></div>
+        
       </div>
     </div>
   </div>
@@ -484,7 +485,7 @@
     document.getElementById('bottomLbl').textContent=rem===0?'All prayers completed — Alhamdulillah':`${rem} prayer${rem!==1?'s':''} remaining today`;
   }
 
-  function updateStreak(){
+  async function updateStreak(){
     // Prayer streak: resets after 2 consecutive fully missed days (1 miss = grace)
     let streak=0, missedInARow=0;
     const d=new Date(today);
