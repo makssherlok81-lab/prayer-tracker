@@ -24,6 +24,9 @@
     #hdr { background: var(--green); border-radius: var(--rl) var(--rl) 0 0; padding: 28px 36px 22px; cursor: pointer; user-select: none; transition: opacity .15s; }
     #hdr:hover { opacity: .96; }
     .hdr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+
+    .burger-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:0;margin-right:10px;line-height:1;flex-shrink:0; }
+    .burger-btn:hover { color:white; }
     .app-label { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: .1em; }
     .hdr-right { display: flex; align-items: center; gap: 12px; }
     .since-badge { font-size: 11px; color: rgba(255,255,255,0.45); }
@@ -160,9 +163,9 @@
 </div>
 
 <div id="mainApp">
-  <div id="hdr" onclick="openCal()">
+  <div id="hdr">
     <div class="hdr-top">
-      <span class="app-label">Prayer Tracker</span>
+      <button class="burger-btn" onclick="openMenu()">&#9776;</button><span class="app-label">Prayer Tracker</span>
       <div class="hdr-right">
         <span class="since-badge" id="sinceBadge"></span>
         <button class="avatar-btn" id="avatarBtn" onclick="event.stopPropagation(); toggleUserMenu()">?</button>
@@ -191,18 +194,7 @@
     </div>
   </div>
 
-  <div id="statsRow">
-    <div class="stat-block">
-      <div class="stat-label">🕌 Prayers <span id="statsYear"></span></div>
-      <div class="stat-value" id="statPrayerDays">—</div>
-      <div class="stat-sub">days all 5 prayed this year</div>
-    </div>
-    <div class="stat-block">
-      <div class="stat-label">🌙 Fasting <span id="statsYear2"></span></div>
-      <div class="stat-value fast" id="statFastDays">—</div>
-      <div class="stat-sub">days fasted this year</div>
-    </div>
-  </div>
+
 
   <div id="prayersArea">
     <div id="prayersList"></div>
@@ -323,7 +315,7 @@
 
   // ── HIJRI CALENDAR ──
   function toHijri(date) {
-    const HIJRI_MONTHS = ["Muharram","Safar","Rabiu02bc al-Awwal","Rabiu02bc al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shau02bcban","Ramadan","Shawwal","Dhu al-Qiu02bbdah","Dhu al-Hijjah"];
+    const HIJRI_MONTHS = ["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaban","Ramadan","Shawwal","Dhu al-Qidah","Dhu al-Hijjah"];
     const jd = Math.floor((date.getTime() / 86400000) + 2440587.5);
     let l = jd - 1948440 + 10632;
     const n = Math.floor((l - 1) / 10631);
@@ -392,6 +384,8 @@
     const initials=(currentUser.displayName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('avatarBtn').textContent=initials;
     document.getElementById('menuName').textContent=currentUser.displayName||'';
+    document.getElementById('menuNameSide').textContent=currentUser.displayName||'';
+    document.getElementById('menuSinceSide').textContent='Member since '+MONTHS[keyToDate(signupDate).getMonth()]+' '+keyToDate(signupDate).getFullYear();
     document.getElementById('menuEmail').textContent=currentUser.email||'';
     const yr=today.getFullYear().toString();
     document.getElementById('statsYear').textContent=yr;
@@ -551,8 +545,18 @@
       if(allPrayersDone(k)) prayerDays++;
       if(v.fasting) fastDays++;
     }
-    document.getElementById('statPrayerDays').textContent=prayerDays;
-    document.getElementById('statFastDays').textContent=fastDays;
+    // Count days with any voluntary prayer
+    const VOLIDS=['ishraq','duha','witr','tahajjud'];
+    let volDays=0;
+    for(const[k,v] of Object.entries(dayData)){
+      if(k<yearStart||k>todayKey) continue;
+      if(VOLIDS.some(id=>v[id])) volDays++;
+    }
+    document.getElementById('menuStatPrayer').textContent=prayerDays;
+    document.getElementById('menuStatFast').textContent=fastDays;
+    document.getElementById('menuStatVol').textContent=volDays;
+    document.getElementById('statsYear').textContent=year;
+    document.getElementById('statsYear2').textContent=year;
   }
 
   function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
@@ -681,6 +685,17 @@
     }
   }
 
+  window.openMenu=()=>{
+    document.getElementById('menuOverlay').style.display='block';
+    const m=document.getElementById('sideMenu');
+    m.style.display='block';
+    setTimeout(()=>m.style.transform='translateX(0)',10);
+  };
+  window.closeMenu=()=>{
+    const m=document.getElementById('sideMenu');
+    m.style.transform='translateX(-100%)';
+    setTimeout(()=>{m.style.display='none';document.getElementById('menuOverlay').style.display='none';},350);
+  };
   window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
   document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
 </script>
