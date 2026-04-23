@@ -66,6 +66,7 @@
     #prayersList { display: flex; flex-direction: column; gap: 8px; }
     .prayer-card { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border: 0.5px solid var(--border); border-radius: var(--r); background: var(--card); transition: all .3s ease; }
     .prayer-card[data-state="1"] { border-color: rgba(29,158,117,0.3); background: rgba(225,245,238,0.4); }
+    .prayer-card[data-state="1"][data-max="1"] { border-color: rgba(212,160,23,0.4); background: rgba(250,238,218,0.5); }
     .prayer-card[data-state="2"] { border-color: rgba(212,160,23,0.4); background: rgba(250,238,218,0.5); }
     .prayer-info { flex: 1; }
     .prayer-name { font-size: 15px; font-weight: 500; color: var(--text); }
@@ -75,6 +76,7 @@
     .chk:hover { transform: scale(1.1); } .chk:active { transform: scale(.92); }
     .chk[data-state="1"] { background: var(--green); border-color: var(--green); }
     .chk[data-state="2"] { background: var(--gold); border-color: var(--gold); }
+    .chk[data-state="1"][data-max="1"] { background: var(--gold); border-color: var(--gold); }
     .friday-switch { font-size: 12px; color: var(--green); background: none; border: none; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px 0; display: block; margin-top: 4px; }
     .all-done-msg { text-align: center; padding: 28px; }
     .all-done-msg .done-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
@@ -229,6 +231,8 @@
 </div>
 
 <div id="sheetOverlay" onclick="closeSheet(event)">
+  <button id="sheetPrev" onclick="event.stopPropagation();navigateSheet(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">‹</button>
+  <button id="sheetNext" onclick="event.stopPropagation();navigateSheet(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">›</button>
   <div id="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
@@ -470,25 +474,28 @@
     const list=document.getElementById('prayersList'); list.innerHTML='';
     const data=dayData[dateKey]||{}, friday=isFriday(dateKey), useJuma=friday&&!data.useDhuhrOnFriday;
     let prayers=[...PRAYERS];
-    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:false,isJuma:true}:p);
+    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:true,isJuma:true}:p);
     prayers.forEach(p=>{
-      const state=data[p.id]||0, maxStates=(!p.hasSunnah||p.isJuma)?1:2;
+      const state=data[p.id]||0, maxStates=p.hasSunnah?2:1;
       const stateLabels=['','Fard prayed','Fard + Sunnah'];
-      const card=document.createElement('div'); card.className='prayer-card'; card.dataset.state=state;
+      const card=document.createElement('div'); card.className='prayer-card'; card.dataset.state=state; card.dataset.max=maxStates;
       card.innerHTML=`<div class="prayer-info">
         <div class="prayer-name">${p.name}</div>
         <div class="prayer-meta">${p.arabic}</div>
-        <div class="prayer-state">${state===0?'':(maxStates===1?'Prayed':stateLabels[state])}</div>
+        <div class="prayer-state">${state===0?'':(maxStates===1&&state===1?'Prayed ✓':stateLabels[state])}</div>
         ${p.isJuma&&dateKey===todayKey?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
       </div>
-      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state)}</button>`;
+      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state,maxStates)}</button>`;
       list.appendChild(card);
     });
     document.getElementById('allDoneMsg').style.display=allPrayersDone(dateKey)?'block':'none';
     list.style.cssText='display:flex;flex-direction:column;gap:8px;';
   }
 
-  function checkIcon(s){ const c=['var(--green-mid)','#EF9F27','white']; return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${c[s]}" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`; }
+  function checkIcon(s,maxSt){
+    const c = s===0 ? 'var(--green-mid)' : (s===2 || (s===1 && maxSt===1)) ? 'white' : '#EF9F27';
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
 
   window.cycleState=async(e,dateKey,prayerId,maxStates)=>{
     e.stopPropagation();
@@ -636,6 +643,13 @@
     document.getElementById('sheetOverlay').classList.add('open');
   };
 
+  window.navigateSheet=async(dir)=>{
+    const cur=new Date(sheetDateKey+'T12:00:00');
+    cur.setDate(cur.getDate()+dir);
+    const newKey=fmtKey(cur);
+    if(newKey>todayKey||newKey<signupDate) return;
+    await openSheet(newKey);
+  };
   window.closeSheet=(e)=>{
     if(e.target===document.getElementById('sheetOverlay')){
       document.getElementById('sheetOverlay').classList.remove('open');
@@ -648,16 +662,16 @@
     const el=document.getElementById('sheetPrayers'); el.innerHTML='';
     const data=dayData[dateKey]||{}, friday=isFriday(dateKey), useJuma=friday&&!data.useDhuhrOnFriday;
     let prayers=[...PRAYERS];
-    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:false,isJuma:true}:p);
+    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:true,isJuma:true}:p);
     prayers.forEach(p=>{
-      const state=data[p.id]||0, maxStates=(!p.hasSunnah||p.isJuma)?1:2;
+      const state=data[p.id]||0, maxStates=p.hasSunnah?2:1;
       const stateLabels=['Not prayed','Fard prayed ✓','Fard + Sunnah ✦'], cls=['s0','s1','s2'];
       const row=document.createElement('div'); row.className='sheet-prayer-row';
       row.innerHTML=`<div><div class="sheet-prayer-name">${p.name}</div><div class="sheet-prayer-arabic">${p.arabic}</div>
         <div class="sheet-state-label ${cls[state]}">${maxStates===1&&state===1?'Prayed ✓':stateLabels[state]}</div>
         ${p.isJuma?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
       </div>
-      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})" style="flex-shrink:0;">${checkIcon(state)}</button>`;
+      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})" style="flex-shrink:0;">${checkIcon(state,maxStates)}</button>`;
       el.appendChild(row);
     });
   }
