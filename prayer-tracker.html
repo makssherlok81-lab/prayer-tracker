@@ -486,7 +486,7 @@
         <div class="prayer-state">${state===0?'':(maxStates===1&&state===1?'Prayed ✓':stateLabels[state])}</div>
         ${p.isJuma&&dateKey===todayKey?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
       </div>
-      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state,maxStates)}</button>`;
+      <button class="chk" data-state="${state}" data-max="${maxStates}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state,maxStates)}</button>`;
       list.appendChild(card);
     });
     document.getElementById('allDoneMsg').style.display=allPrayersDone(dateKey)?'block':'none';
@@ -689,7 +689,7 @@
         <div class="sheet-state-label ${cls[state]}">${maxStates===1&&state===1?'Prayed ✓':stateLabels[state]}</div>
         ${p.isJuma?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
       </div>
-      <button class="chk" data-state="${state}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})" style="flex-shrink:0;">${checkIcon(state,maxStates)}</button>`;
+      <button class="chk" data-state="${state}" data-max="${maxStates}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})" style="flex-shrink:0;">${checkIcon(state,maxStates)}</button>`;
       el.appendChild(row);
     });
   }
