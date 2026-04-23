@@ -27,9 +27,9 @@
 
     .burger-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:0;margin-right:10px;line-height:1;flex-shrink:0; }
     .burger-btn:hover { color:white; }
-    .app-label { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: .1em; }
+    .app-label { display: none; }
     .hdr-right { display: flex; align-items: center; gap: 12px; }
-    .since-badge { font-size: 11px; color: rgba(255,255,255,0.45); }
+    .since-badge { display: none; }
     .avatar-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 600; }
     .app-date { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 4px; }
     .hijri-date { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 16px; letter-spacing: .01em; }
@@ -165,9 +165,9 @@
 <div id="mainApp">
   <div id="hdr">
     <div class="hdr-top">
-      <button class="burger-btn" onclick="openMenu()">&#9776;</button><span class="app-label">Prayer Tracker</span>
+      <button class="burger-btn" onclick="openMenu()">&#9776;</button>
       <div class="hdr-right">
-        <span class="since-badge" id="sinceBadge"></span>
+        
         <button class="avatar-btn" id="avatarBtn" onclick="event.stopPropagation(); toggleUserMenu()">?</button>
       </div>
     </div>
@@ -278,20 +278,20 @@
     <div style="font-size:12px;color:var(--text2);margin-top:3px;" id="menuSinceSide"></div>
   </div>
   <div style="padding:20px 24px 8px;">
-    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:16px;">📊 Yearly stats</div>
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:16px;">📊 Statistics</div>
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-size:13px;color:var(--text);">All 5 prayers</div>
-          <div style="font-size:11px;color:var(--text2);">days completed this year</div>
+          <div style="font-size:11px;color:var(--text2);">days completed — all time</div>
         </div>
-        <div style="font-size:26px;font-weight:500;color:var(--text);" id="menuStatPrayer">—</div>
+        <div style="font-size:26px;font-weight:500;color:#D4A017;" id="menuStatPrayer">—</div>
       </div>
       <div style="height:0.5px;background:var(--border);"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-size:13px;color:var(--text);">Fasting days</div>
-          <div style="font-size:11px;color:var(--text2);">total this year</div>
+          <div style="font-size:11px;color:var(--text2);">total — all time</div>
         </div>
         <div style="font-size:26px;font-weight:500;color:#7B3F9E;" id="menuStatFast">—</div>
       </div>
@@ -299,7 +299,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-size:13px;color:var(--text);">Voluntary prayers</div>
-          <div style="font-size:11px;color:var(--text2);">days with any sunnah this year</div>
+          <div style="font-size:11px;color:var(--text2);">days with any sunnah — all time</div>
         </div>
         <div style="font-size:26px;font-weight:500;color:var(--green);" id="menuStatVol">—</div>
       </div>
@@ -434,7 +434,6 @@
     document.getElementById('appDate').textContent=`${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
     document.getElementById('hijriDate').textContent = toHijri(today);
     const sd=keyToDate(signupDate);
-    document.getElementById('sinceBadge').textContent=`Since ${MONTHS[sd.getMonth()].slice(0,3)} ${sd.getFullYear()}`;
     const initials=(currentUser.displayName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('avatarBtn').textContent=initials;
     document.getElementById('menuName').textContent=currentUser.displayName||'';
@@ -591,7 +590,12 @@
 
   async function updateYearlyStats(){
     const year=today.getFullYear();
-    for(let m=0;m<=today.getMonth();m++) await loadMonthData(year,m);
+    const startYear=parseInt(signupDate.slice(0,4));
+    for(let y=startYear;y<=year;y++){
+      const mFrom=y===startYear?parseInt(signupDate.slice(5,7))-1:0;
+      const mTo=y===year?today.getMonth():11;
+      for(let m=mFrom;m<=mTo;m++) await loadMonthData(y,m);
+    }
     let prayerDays=0, fastDays=0;
     const yearStart=`${year}-01-01`;
     for(const [k,v] of Object.entries(dayData)){
