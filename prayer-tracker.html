@@ -170,7 +170,6 @@
     <div class="hdr-top">
       <button class="burger-btn" onclick="openMenu()">&#9776;</button>
       <div class="hdr-right">
-        
         <button class="avatar-btn" id="avatarBtn" onclick="event.stopPropagation(); toggleUserMenu()">?</button>
       </div>
     </div>
@@ -192,12 +191,9 @@
       <div>
         <div><span class="streak-big fast" id="fastStreakNum">0</span><span class="streak-unit fast"> days fasted</span></div>
         <div class="streak-sub" id="fastStreakSub"></div>
-        
       </div>
     </div>
   </div>
-
-
 
   <div id="prayersArea">
     <div id="prayersList"></div>
@@ -227,7 +223,6 @@
 
   <div id="bottomBar">
     <span id="bottomLbl">Loading…</span>
-
   </div>
 </div>
 
@@ -438,16 +433,12 @@
     document.getElementById('mainApp').style.display='block';
     document.getElementById('appDate').textContent=`${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
     document.getElementById('hijriDate').textContent = toHijri(today);
-    const sd=keyToDate(signupDate);
     const initials=(currentUser.displayName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('avatarBtn').textContent=initials;
     document.getElementById('menuName').textContent=currentUser.displayName||'';
     document.getElementById('menuNameSide').textContent=currentUser.displayName||'';
     document.getElementById('menuSinceSide').textContent='Member since '+MONTHS[keyToDate(signupDate).getMonth()]+' '+keyToDate(signupDate).getFullYear();
     document.getElementById('menuEmail').textContent=currentUser.email||'';
-    const yr=today.getFullYear().toString();
-    document.getElementById('statsYear').textContent=yr;
-    document.getElementById('statsYear2').textContent=yr;
     buildStrip(); buildPrayers(todayKey); buildFasting(todayKey);
     updateBottom(todayKey); updateStreak(); updateYearlyStats(); updateFireAnim();
   }
@@ -575,7 +566,6 @@
       hStart.setDate(hStart.getDate()-1);
     }
     const hmStartKey=fmtKey(hStart);
-    // Load all Gregorian months that overlap with this Hijri month
     const startM = hStart.getMonth(), endM = today.getMonth();
     const startY = hStart.getFullYear(), endY = today.getFullYear();
     for(let y=startY; y<=endY; y++){
@@ -611,7 +601,6 @@
       if(allPrayersDone(k)) prayerDays++;
       if(v.fasting) fastDays++;
     }
-    // Count days with any voluntary prayer
     const VOLIDS=['ishraq','duha','witr','tahajjud'];
     let volDays=0;
     for(const[k,v] of Object.entries(dayData)){
@@ -621,8 +610,6 @@
     document.getElementById('menuStatPrayer').textContent=prayerDays;
     document.getElementById('menuStatFast').textContent=fastDays;
     document.getElementById('menuStatVol').textContent=volDays;
-    document.getElementById('statsYear').textContent=year;
-    document.getElementById('statsYear2').textContent=year;
   }
 
   function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
@@ -644,7 +631,6 @@
     document.getElementById('sheetOverlay').classList.add('open');
   };
 
-  // Touch swipe on sheet
   (function(){
     let startX=0, startY=0;
     const sheet=document.getElementById('sheet');
