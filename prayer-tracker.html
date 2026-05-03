@@ -138,7 +138,7 @@
     .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
     .legend-label { font-size: 11px; color: var(--text2); }
     /* USER MENU */
-    #userMenu { display: none; position: fixed; top: 0; right: 0; z-index: 500; background: var(--card); border-radius: 0 0 0 var(--r); border: 0.5px solid var(--border); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-width: 220px; }
+    #userMenu { display: none; position: fixed; top: 0; right: 0; z-index: 500; background: var(--card); border-radius: 0 0 0 var(--r); border: 0.5px solid var(--border); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-width: 260px; max-width: 90vw; }
     #userMenu.open { display: block; }
     .user-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
     .user-email { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
@@ -204,7 +204,7 @@
     .surah-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); cursor:pointer; transition:background .15s; border-radius:6px; }
     .surah-row:last-child { border-bottom:none; }
     .surah-row:hover { background:rgba(0,0,0,0.02); }
-    .surah-row.learning { background:rgba(29,158,117,0.06); border-color:rgba(29,158,117,0.15); }
+    .surah-row.learning { background:rgba(225,245,238,0.5); border-color:rgba(29,158,117,0.3); }
     .surah-row.memorized { background:rgba(212,160,23,0.08); border-color:rgba(212,160,23,0.2); }
     .surah-num { font-size:11px; color:var(--text2); width:24px; flex-shrink:0; text-align:center; }
     .surah-info { flex:1; }
@@ -368,26 +368,7 @@
     <div style="font-size:16px;font-weight:500;color:var(--text);" id="menuNameSide"></div>
     <div style="font-size:12px;color:var(--text2);margin-top:3px;" id="menuSinceSide"></div>
   </div>
-  <div style="padding:20px 24px 8px;">
-    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:16px;">📊 Statistics</div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:13px;color:var(--text);">All 5 prayers</div><div style="font-size:11px;color:var(--text2);">days completed — all time</div></div>
-        <div style="font-size:26px;font-weight:500;color:#D4A017;" id="menuStatPrayer">—</div>
-      </div>
-      <div style="height:0.5px;background:var(--border);"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:13px;color:var(--text);">Fasting days</div><div style="font-size:11px;color:var(--text2);">total — all time</div></div>
-        <div style="font-size:26px;font-weight:500;color:#7B3F9E;" id="menuStatFast">—</div>
-      </div>
-      <div style="height:0.5px;background:var(--border);"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:13px;color:var(--text);">Voluntary prayers</div><div style="font-size:11px;color:var(--text2);">days with any sunnah — all time</div></div>
-        <div style="font-size:26px;font-weight:500;color:var(--green);" id="menuStatVol">—</div>
-      </div>
-    </div>
-  </div>
-  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
+
   <div style="padding:0 24px 8px;">
     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">📅 Calendar</div>
     <button onclick="closeMenu();openCal();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View full calendar →</button>
@@ -405,16 +386,40 @@
       <div style="font-size:12px;color:var(--text2);">Invite friends & family to fast or pray together</div>
     </div>
   </div>
-  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
-  <div style="padding:0 24px;">
-    <button onclick="signOut()" style="width:100%;background:#fee;border:0.5px solid rgba(200,0,0,0.2);border-radius:var(--r);padding:10px;cursor:pointer;font-size:13px;color:#c00;font-family:inherit;">Sign out</button>
-  </div>
+
 </div>
 
 <!-- USER MENU -->
 <div id="userMenu">
-  <div class="user-name" id="menuName"></div>
-  <div class="user-email" id="menuEmail"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:0.5px solid var(--border);">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--green);flex-shrink:0;" id="menuAvatarCircle">?</div>
+    <div>
+      <div class="user-name" id="menuName" style="margin-bottom:0;"></div>
+      <div class="user-email" id="menuEmail" style="margin-bottom:0;"></div>
+    </div>
+  </div>
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Prayer & fasting</div>
+  <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days all 5 prayed</span>
+      <span style="font-size:20px;font-weight:500;color:#D4A017;" id="menuStatPrayer">—</span>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days fasted</span>
+      <span style="font-size:20px;font-weight:500;color:#7B3F9E;" id="menuStatFast">—</span>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days with voluntary prayer</span>
+      <span style="font-size:20px;font-weight:500;color:#0F6E56;" id="menuStatVol">—</span>
+    </div>
+  </div>
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Hifz</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <span style="font-size:12px;color:var(--text2);">Surahs memorized</span>
+    <span style="font-size:20px;font-weight:500;color:#4A90D9;" id="menuStatHifz">—</span>
+  </div>
   <button class="signout-btn" onclick="signOut()">Sign out</button>
 </div>
 
@@ -440,7 +445,6 @@
     </div>
     <div id="hifzDueSection"></div>
     <div id="hifzList"></div>
-    <div id="hifzReviewLog"></div>
   </div>
 </div>
 
@@ -612,6 +616,7 @@
     const ini=(currentUser.displayName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('avatarBtn').textContent=ini;
     document.getElementById('menuName').textContent=currentUser.displayName||'';
+    document.getElementById('menuAvatarCircle').textContent=ini;
     document.getElementById('menuNameSide').textContent=currentUser.displayName||'';
     document.getElementById('menuSinceSide').textContent='Member since '+MONTHS[keyToDate(signupDate).getMonth()]+' '+keyToDate(signupDate).getFullYear();
     document.getElementById('menuEmail').textContent=currentUser.email||'';
@@ -765,6 +770,8 @@
     document.getElementById('menuStatPrayer').textContent=pD;
     document.getElementById('menuStatFast').textContent=fD;
     document.getElementById('menuStatVol').textContent=vD;
+    const memCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    document.getElementById('menuStatHifz').textContent=memCount+' / 114';
   }
 
   function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
@@ -926,6 +933,8 @@
   }
   async function saveHifzData(){
     try{ await setDoc(doc(db,'users',currentUser.uid),{hifz:hifzData},{merge:true}); }catch(e){}
+    const memCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    const el=document.getElementById('menuStatHifz'); if(el) el.textContent=memCount+' / 114';
   }
 
   window.openHifz=async()=>{
@@ -938,7 +947,6 @@
     buildHifzProgress();
     buildHifzDueSection();
     buildHifzList();
-    buildHifzReviewLog();
     updateAvatarRing();
   }
 
@@ -964,39 +972,106 @@
       const daysOverdue=daysUntilDue<0?Math.abs(daysUntilDue):0;
       const isDueToday=nextDue===todayKey;
       const isOverdue=nextDue<todayKey;
-      if(isOverdue||isDueToday) dueSurahs.push({num,name:s[1],ayahs:s[3],daysOverdue,isDueToday,nextDue});
+      if(isOverdue||isDueToday) dueSurahs.push({num,name:s[1],daysOverdue,isDueToday});
     });
 
-    if(!dueSurahs.length) return;
+    // Build review log data for the right card
+    const byJuz={};
+    SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s[0]); });
+    const last7=Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()-i); return fmtKey(d); });
+    const recentEntries=[];
+    last7.forEach(date=>{
+      const reviewed=SURAHS.filter(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+      if(!reviewed.length) return;
+      const shownJuz=new Set(), lines=[];
+      reviewed.forEach(s=>{
+        const juz=s[4]; if(shownJuz.has(juz)) return;
+        const juzNums=byJuz[juz];
+        const allRev=juzNums.every(n=>{ const r=getHifzField(n,'reviews')||[]; return r.some(rv=>rv.date===date); });
+        if(allRev){ shownJuz.add(juz); lines.push({text:'Juz '+juz+' — complete',juz:true}); }
+        else lines.push({text:s[1],juz:false});
+      });
+      const label=date===todayKey?'Today':date===last7[1]?'Yesterday':keyToDate(date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      recentEntries.push({label,lines:lines.slice(0,4),more:Math.max(0,lines.length-4)});
+    });
 
-    dueSurahs.sort((a,b)=>b.daysOverdue-a.daysOverdue);
+    const hasAnything=dueSurahs.length>0||recentEntries.length>0;
+    if(!hasAnything) return;
 
-    const sec=document.createElement('div'); sec.className='hifz-due-section';
-    const overdueCnt=dueSurahs.filter(s=>s.daysOverdue>0).length;
-    const todayCnt=dueSurahs.filter(s=>s.isDueToday).length;
-    sec.innerHTML=`<div class="hifz-due-title">
-      Due for review
-      ${overdueCnt?`<span class="due-badge overdue">${overdueCnt} overdue</span>`:''}
-      ${todayCnt?`<span class="due-badge today">${todayCnt} today</span>`:''}
-    </div>`;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 24px 4px;';
 
-    dueSurahs.forEach(s=>{
-      const reviewedToday=isReviewedToday(s.num);
-      const item=document.createElement('div'); item.className='due-item';
-      item.innerHTML=`
-        <div class="due-item-left">
-          <div class="due-item-name">${s.name}</div>
-          <div class="due-item-meta ${s.daysOverdue>0?'overdue':'today'}">${s.daysOverdue>0?`${s.daysOverdue} day${s.daysOverdue!==1?'s':''} overdue`:'Due today'}</div>
+    // LEFT — Due today card
+    const leftCard=document.createElement('div');
+    leftCard.style.cssText='background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);padding:12px;';
+
+    if(dueSurahs.length===0){
+      leftCard.innerHTML=`
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Due today</div>
+        <div style="text-align:center;padding:12px 4px;">
+          <div style="font-size:18px;margin-bottom:6px;">✦</div>
+          <div style="font-size:12px;font-weight:500;color:var(--green);">All caught up!</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;">Masha'Allah — keep it consistent.</div>
+        </div>`;
+    } else {
+      dueSurahs.sort((a,b)=>b.daysOverdue-a.daysOverdue);
+      const overdueCnt=dueSurahs.filter(s=>s.daysOverdue>0).length;
+      const todayCnt=dueSurahs.filter(s=>s.isDueToday).length;
+      let titleHtml=`<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">Due today`;
+      if(overdueCnt) titleHtml+=`<span style="font-size:10px;padding:2px 6px;border-radius:20px;background:#FDECEA;color:#C0392B;">${overdueCnt}↑</span>`;
+      titleHtml+='</div>';
+      leftCard.innerHTML=titleHtml;
+      dueSurahs.slice(0,5).forEach(s=>{
+        const reviewedToday=isReviewedToday(s.num);
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);';
+        row.innerHTML=`<div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:10px;color:${s.daysOverdue>0?'#C0392B':'#4A90D9'};">${s.daysOverdue>0?s.daysOverdue+'d overdue':'Due today'}</div>
         </div>
-        <div class="due-item-actions">
-          <button class="due-postpone-btn" onclick="openPostpone(${s.num},'${s.name}')">Later…</button>
-          <button class="due-review-btn ${reviewedToday?'done':''}" onclick="logReview(${s.num})" title="Mark reviewed">
-            ${reviewedToday?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`:'🔄'}
+        <div style="display:flex;gap:4px;margin-left:6px;">
+          <button onclick="openPostpone(${s.num},'${s.name}')" style="font-size:10px;color:var(--text2);background:var(--bg);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;cursor:pointer;font-family:inherit;">…</button>
+          <button onclick="logReview(${s.num})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${reviewedToday?'#4A90D9':'var(--border2)'};background:${reviewedToday?'#4A90D9':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;">
+            ${reviewedToday?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'↻'}
           </button>
         </div>`;
-      sec.appendChild(item);
-    });
-    el.appendChild(sec);
+        row.querySelector('div').style.borderBottom='none';
+        leftCard.appendChild(row);
+      });
+      if(dueSurahs.length>5){
+        const more=document.createElement('div');
+        more.style.cssText='font-size:10px;color:var(--text2);text-align:center;padding-top:6px;';
+        more.textContent=`+${dueSurahs.length-5} more`;
+        leftCard.appendChild(more);
+      }
+    }
+
+    // RIGHT — Recent reviews card
+    const rightCard=document.createElement('div');
+    rightCard.style.cssText='background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);padding:12px;';
+    rightCard.innerHTML=`<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Recent reviews</div>`;
+
+    if(recentEntries.length===0){
+      rightCard.innerHTML+=`<div style="text-align:center;padding:12px 4px;font-size:11px;color:var(--text2);">No reviews yet this week.</div>`;
+    } else {
+      recentEntries.slice(0,3).forEach(entry=>{
+        const block=document.createElement('div');
+        block.style.cssText='padding:5px 0;border-bottom:0.5px solid var(--border);';
+        block.innerHTML=`<div style="font-size:10px;color:var(--text2);margin-bottom:3px;">${entry.label}</div>`;
+        entry.lines.forEach(l=>{
+          const d=document.createElement('div');
+          d.style.cssText=`font-size:12px;${l.juz?'color:#0F6E56;font-weight:500;':'color:var(--text);'}`;
+          d.textContent=l.juz?'✓ '+l.text:l.text;
+          block.appendChild(d);
+        });
+        if(entry.more){ const m=document.createElement('div'); m.style.cssText='font-size:10px;color:var(--text2);'; m.textContent='+'+entry.more+' more'; block.appendChild(m); }
+        rightCard.appendChild(block);
+      });
+    }
+
+    wrap.appendChild(leftCard);
+    wrap.appendChild(rightCard);
+    el.appendChild(wrap);
   }
 
   function isReviewedToday(num){
