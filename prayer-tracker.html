@@ -12,6 +12,8 @@
       --green: #0F6E56; --green-mid: #1D9E75; --green-pale: #E1F5EE;
       --amber: #EF9F27; --amber-dark: #412402; --gold: #D4A017;
       --violet: #7B3F9E; --violet2: #B05070; --r: 12px; --rl: 20px;
+      --blue: #4A90D9; --blue-pale: #E8F4FF;
+      --red: #C0392B; --red-pale: #FDECEA;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 32px 16px 60px; }
     #authScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; width: 100%; max-width: 400px; }
@@ -26,7 +28,6 @@
     .burger-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:0;margin-right:10px;line-height:1;flex-shrink:0; }
     .burger-btn:hover { color:white; }
     .hdr-right { display: flex; align-items: center; gap: 12px; }
-    /* Avatar with progress ring */
     .avatar-wrap { position:relative; width:36px; height:36px; cursor:pointer; flex-shrink:0; }
     .avatar-ring-svg { position:absolute; top:0; left:0; width:36px; height:36px; transform:rotate(-90deg); }
     .avatar-ring-bg { fill:none; stroke:rgba(255,255,255,0.15); stroke-width:2.5; }
@@ -34,7 +35,7 @@
     .avatar-btn { position:absolute; top:4px; left:4px; width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.2); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:600; }
     .avatar-btn:hover { background:rgba(255,255,255,0.3); }
     .app-date { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 4px; }
-    .hijri-date { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 16px; letter-spacing: .01em; }
+    .hijri-date { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 16px; }
     #strip { display: flex; gap: 6px; }
     .strip-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 2px 0; }
     .strip-letter { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; }
@@ -159,22 +160,74 @@
     .hifz-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
     .hifz-leg { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text2); }
     .hifz-leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    /* Due section */
+    .hifz-due-section { padding:14px 24px 4px; }
+    .hifz-due-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .due-badge { font-size:10px; font-weight:500; padding:2px 7px; border-radius:20px; }
+    .due-badge.overdue { background:var(--red-pale); color:var(--red); }
+    .due-badge.today { background:var(--blue-pale); color:var(--blue); }
+    .due-item { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:0.5px solid var(--border); }
+    .due-item:last-child { border-bottom:none; }
+    .due-item-left { flex:1; }
+    .due-item-name { font-size:13px; font-weight:500; color:var(--text); }
+    .due-item-meta { font-size:11px; margin-top:1px; }
+    .due-item-meta.overdue { color:var(--red); }
+    .due-item-meta.today { color:var(--blue); }
+    .due-item-actions { display:flex; align-items:center; gap:6px; }
+    .due-review-btn { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--blue); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all .2s; }
+    .due-review-btn.done { background:var(--blue); border-color:var(--blue); }
+    .due-postpone-btn { font-size:11px; color:var(--text2); background:var(--bg); border:0.5px solid var(--border2); border-radius:6px; padding:4px 8px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .due-postpone-btn:hover { background:var(--border); }
+    /* Postpone popup */
+    #postponePopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    #postponePopup.open { display:flex; }
+    .postpone-inner { background:var(--card); border-radius:var(--r); padding:24px; width:300px; max-width:100%; }
+    .postpone-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+    .postpone-sub { font-size:12px; color:var(--text2); margin-bottom:16px; }
+    .postpone-options { display:flex; flex-direction:column; gap:8px; }
+    .postpone-opt { background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:11px 14px; cursor:pointer; font-size:13px; color:var(--text); font-family:inherit; text-align:left; transition:background .15s; }
+    .postpone-opt:hover { background:var(--green-pale); border-color:var(--green-mid); }
+    .postpone-cancel { margin-top:8px; background:none; border:none; cursor:pointer; font-size:12px; color:var(--text2); font-family:inherit; width:100%; padding:8px; }
+    /* Confirm popup */
+    #confirmPopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    #confirmPopup.open { display:flex; }
+    .confirm-inner { background:var(--card); border-radius:var(--r); padding:24px; width:300px; max-width:100%; }
+    .confirm-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:8px; }
+    .confirm-sub { font-size:13px; color:var(--text2); margin-bottom:20px; line-height:1.5; }
+    .confirm-btns { display:flex; gap:8px; }
+    .confirm-yes { flex:1; background:var(--red); color:white; border:none; border-radius:8px; padding:10px; cursor:pointer; font-size:13px; font-family:inherit; }
+    .confirm-no { flex:1; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:10px; cursor:pointer; font-size:13px; color:var(--text); font-family:inherit; }
+    /* Juz sections */
     .juz-section { padding:14px 24px 4px; }
     .juz-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
     .juz-count { font-size:10px; font-weight:400; }
-    .surah-row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:0.5px solid var(--border); }
+    .surah-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); cursor:pointer; transition:background .15s; border-radius:6px; }
     .surah-row:last-child { border-bottom:none; }
-    .surah-num { font-size:11px; color:var(--text2); width:24px; flex-shrink:0; text-align:center; padding-top:2px; }
+    .surah-row:hover { background:rgba(0,0,0,0.02); }
+    .surah-row.learning { background:rgba(29,158,117,0.06); border-color:rgba(29,158,117,0.15); }
+    .surah-row.memorized { background:rgba(212,160,23,0.08); border-color:rgba(212,160,23,0.2); }
+    .surah-num { font-size:11px; color:var(--text2); width:24px; flex-shrink:0; text-align:center; }
     .surah-info { flex:1; }
     .surah-name { font-size:14px; font-weight:500; color:var(--text); }
     .surah-arabic { font-size:12px; color:var(--text2); margin-top:1px; }
     .surah-meta { font-size:10px; color:var(--text2); margin-top:2px; }
-    .surah-date { font-size:10px; margin-top:2px; }
-    .surah-state-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border2); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; margin-top:2px; }
-    .surah-state-btn:hover { transform:scale(1.1); }
-    .surah-state-btn.s1 { background:#FFF8E7; border-color:#F0C040; }
-    .surah-state-btn.s2 { background:#E8F4FF; border-color:#4A90D9; }
-    .surah-state-btn.s3 { background:var(--gold); border-color:var(--gold); }
+    .surah-date-memorized { font-size:10px; color:var(--gold); margin-top:2px; }
+    .surah-date-reviewed { font-size:10px; color:var(--blue); margin-top:1px; }
+    .surah-due { font-size:10px; margin-top:2px; }
+    .surah-due.overdue { color:var(--red); }
+    .surah-due.soon { color:var(--amber); }
+    .surah-due.ok { color:var(--green); }
+    .surah-review-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border2); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all .2s; flex-shrink:0; }
+    .surah-review-btn:hover { transform:scale(1.1); }
+    .surah-review-btn.reviewed { background:var(--blue); border-color:var(--blue); }
+    /* Review log */
+    .review-log-section { padding:14px 24px 4px; }
+    .review-log-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:12px; }
+    .review-day-block { margin-bottom:12px; }
+    .review-day-label { font-size:12px; font-weight:500; color:var(--text); margin-bottom:6px; }
+    .review-day-items { display:flex; flex-direction:column; gap:3px; }
+    .review-day-item { font-size:12px; color:var(--text2); padding:4px 10px; background:var(--bg); border-radius:6px; }
+    .review-day-item.juz-complete { color:var(--green); font-weight:500; }
   </style>
 </head>
 <body>
@@ -263,8 +316,8 @@
 
 <!-- DAY SHEET -->
 <div id="sheetOverlay" onclick="closeSheet(event)">
-  <button id="sheetPrev" onclick="event.stopPropagation();navigateSheet(-1)" class="sheet-nav-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">‹</button>
-  <button id="sheetNext" onclick="event.stopPropagation();navigateSheet(1)" class="sheet-nav-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">›</button>
+  <button onclick="event.stopPropagation();navigateSheet(-1)" class="sheet-nav-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">‹</button>
+  <button onclick="event.stopPropagation();navigateSheet(1)" class="sheet-nav-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">›</button>
   <div id="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
@@ -379,13 +432,41 @@
         <div class="hifz-bar-bg"><div class="hifz-bar-fill" id="hifzBar" style="width:0%"></div></div>
         <div class="hifz-legend">
           <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--gold)"></div>Memorized</div>
-          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:#4A90D9"></div>Reviewing</div>
-          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:#F0C040"></div>Learning</div>
-          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--border2)"></div>Not started</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--green)"></div>Learning</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--blue)"></div>Reviewed today</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--red)"></div>Overdue</div>
         </div>
       </div>
     </div>
+    <div id="hifzDueSection"></div>
     <div id="hifzList"></div>
+    <div id="hifzReviewLog"></div>
+  </div>
+</div>
+
+<!-- POSTPONE POPUP -->
+<div id="postponePopup">
+  <div class="postpone-inner">
+    <div class="postpone-title">Postpone review</div>
+    <div class="postpone-sub" id="postponeSurahName"></div>
+    <div class="postpone-options">
+      <button class="postpone-opt" onclick="confirmPostpone(1)">Tomorrow</button>
+      <button class="postpone-opt" onclick="confirmPostpone(3)">In 3 days</button>
+      <button class="postpone-opt" onclick="confirmPostpone(7)">In a week</button>
+    </div>
+    <button class="postpone-cancel" onclick="closePostpone()">Cancel</button>
+  </div>
+</div>
+
+<!-- CONFIRM RESET POPUP -->
+<div id="confirmPopup">
+  <div class="confirm-inner">
+    <div class="confirm-title">Reset memorization?</div>
+    <div class="confirm-sub" id="confirmText">This will clear the memorization date and reset this surah to "Not started". Your review history will be kept.</div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-yes" id="confirmYesBtn">Reset</button>
+    </div>
   </div>
 </div>
 
@@ -405,25 +486,25 @@
   const auth = getAuth(app), db = getFirestore(app), provider = new GoogleAuthProvider();
 
   const PRAYERS = [
-    { id:'fajr',    name:'Fajr',    arabic:'الفجر',  hasSunnah:true  },
-    { id:'dhuhr',   name:'Dhuhr',   arabic:'الظهر',  hasSunnah:true  },
-    { id:'asr',     name:'Asr',     arabic:'العصر',  hasSunnah:false },
-    { id:'maghrib', name:'Maghrib', arabic:'المغرب', hasSunnah:true  },
-    { id:'isha',    name:'Isha',    arabic:'العشاء',  hasSunnah:true  },
+    { id:'fajr',name:'Fajr',arabic:'الفجر',hasSunnah:true },
+    { id:'dhuhr',name:'Dhuhr',arabic:'الظهر',hasSunnah:true },
+    { id:'asr',name:'Asr',arabic:'العصر',hasSunnah:false },
+    { id:'maghrib',name:'Maghrib',arabic:'المغرب',hasSunnah:true },
+    { id:'isha',name:'Isha',arabic:'العشاء',hasSunnah:true },
   ];
   const VOLUNTARY = [
-    { id:'ishraq',   name:'Ishraq',   arabic:'الإشراق' },
-    { id:'duha',     name:'Duha',     arabic:'الضحى'   },
-    { id:'witr',     name:'Witr',     arabic:'الوتر'   },
-    { id:'tahajjud', name:'Tahajjud', arabic:'التهجد'  },
+    { id:'ishraq',name:'Ishraq',arabic:'الإشراق' },
+    { id:'duha',name:'Duha',arabic:'الضحى' },
+    { id:'witr',name:'Witr',arabic:'الوتر' },
+    { id:'tahajjud',name:'Tahajjud',arabic:'التهجد' },
   ];
   const SURAHS = [
     [1,'Al-Fatihah','الفاتحة',7,1],[2,'Al-Baqarah','البقرة',286,1],[3,"Ali 'Imran",'آل عمران',200,3],
-    [4,"An-Nisa",'النساء',176,4],[5,"Al-Ma'idah",'المائدة',120,6],[6,"Al-An'am",'الأنعام',165,7],
+    [4,'An-Nisa','النساء',176,4],[5,"Al-Ma'idah",'المائدة',120,6],[6,"Al-An'am",'الأنعام',165,7],
     [7,"Al-A'raf",'الأعراف',206,8],[8,'Al-Anfal','الأنفال',75,9],[9,'At-Tawbah','التوبة',129,10],
     [10,'Yunus','يونس',109,11],[11,'Hud','هود',123,11],[12,'Yusuf','يوسف',111,12],
     [13,"Ar-Ra'd",'الرعد',43,13],[14,'Ibrahim','إبراهيم',52,13],[15,'Al-Hijr','الحجر',99,14],
-    [16,'An-Nahl','النحل',128,14],[17,"Al-Isra",'الإسراء',111,15],[18,'Al-Kahf','الكهف',110,15],
+    [16,'An-Nahl','النحل',128,14],[17,'Al-Isra','الإسراء',111,15],[18,'Al-Kahf','الكهف',110,15],
     [19,'Maryam','مريم',98,16],[20,'Ta-Ha','طه',135,16],[21,'Al-Anbiya','الأنبياء',112,17],
     [22,'Al-Hajj','الحج',78,17],[23,"Al-Mu'minun",'المؤمنون',118,18],[24,'An-Nur','النور',64,18],
     [25,'Al-Furqan','الفرقان',77,18],[26,"Ash-Shu'ara",'الشعراء',227,19],[27,'An-Naml','النمل',93,19],
@@ -443,7 +524,7 @@
     [67,'Al-Mulk','الملك',30,29],[68,'Al-Qalam','القلم',52,29],[69,'Al-Haqqah','الحاقة',52,29],
     [70,"Al-Ma'arij",'المعارج',44,29],[71,'Nuh','نوح',28,29],[72,'Al-Jinn','الجن',28,29],
     [73,'Al-Muzzammil','المزمل',20,29],[74,'Al-Muddathir','المدثر',56,29],[75,'Al-Qiyamah','القيامة',40,29],
-    [76,'Al-Insan','الإنسان',31,29],[77,'Al-Mursalat','المرسلات',50,29],[78,"An-Naba",'النبأ',40,30],
+    [76,'Al-Insan','الإنسان',31,29],[77,'Al-Mursalat','المرسلات',50,29],[78,'An-Naba','النبأ',40,30],
     [79,"An-Nazi'at",'النازعات',46,30],[80,"'Abasa",'عبس',42,30],[81,'At-Takwir','التكوير',29,30],
     [82,'Al-Infitar','الانفطار',19,30],[83,'Al-Mutaffifin','المطففين',36,30],[84,'Al-Inshiqaq','الانشقاق',25,30],
     [85,'Al-Buruj','البروج',22,30],[86,'At-Tariq','الطارق',17,30],[87,"Al-A'la",'الأعلى',19,30],
@@ -457,24 +538,26 @@
     [109,'Al-Kafirun','الكافرون',6,30],[110,'An-Nasr','النصر',3,30],[111,'Al-Masad','المسد',5,30],
     [112,'Al-Ikhlas','الإخلاص',4,30],[113,'Al-Falaq','الفلق',5,30],[114,'An-Nas','الناس',6,30],
   ];
+  const SR_INTERVALS = [1, 3, 7, 14, 30]; // spaced repetition intervals in days
   const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const DLET=['S','M','T','W','T','F','S'];
 
   let currentUser=null, signupDate=null, dayData={}, sheetDateKey=null, calYear, calMonth;
   let hifzData={};
+  let postponeTarget=null, confirmCallback=null;
   const today=new Date(), todayKey=fmtKey(today);
 
   function fmtKey(d){ return d.toISOString().split('T')[0]; }
   function keyToDate(k){ return new Date(k+'T12:00:00'); }
   function isFriday(k){ return keyToDate(k).getDay()===5; }
+  function addDays(dateStr, n){ const d=keyToDate(dateStr); d.setDate(d.getDate()+n); return fmtKey(d); }
+  function daysDiff(a, b){ return Math.round((keyToDate(b)-keyToDate(a))/86400000); }
 
   function toHijri(date){
     const HM=["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaban","Ramadan","Shawwal","Dhu al-Qidah","Dhu al-Hijjah"];
     const jd=Math.floor((date.getTime()/86400000)+2440587.5);
-    let l=jd-1948440+10632;
-    const n=Math.floor((l-1)/10631);
-    l=l-10631*n+354;
+    let l=jd-1948440+10632; const n=Math.floor((l-1)/10631); l=l-10631*n+354;
     const j=Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)+Math.floor(l/5670)*Math.floor((43*l)/15238);
     l=l-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
     const month=Math.floor((24*l)/709), day=l-Math.floor((709*month)/24), year=30*n+j-30;
@@ -671,7 +754,7 @@
       const mF=y===startYear?parseInt(signupDate.slice(5,7))-1:0, mT=y===year?today.getMonth():11;
       for(let m=mF;m<=mT;m++) await loadMonthData(y,m);
     }
-    let pD=0, fD=0, vD=0;
+    let pD=0,fD=0,vD=0;
     const VOLIDS=['ishraq','duha','witr','tahajjud'];
     for(const[k,v] of Object.entries(dayData)){
       if(k<signupDate||k>todayKey) continue;
@@ -693,13 +776,13 @@
   }
 
   function updateAvatarRing(){
-    const mem=Object.values(hifzData).filter(v=>(typeof v==='object'?v.s:(v||0))===3).length;
-    const circ=2*Math.PI*16;
-    const offset=circ*(1-mem/114);
+    const mem=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    const circ=2*Math.PI*16, offset=circ*(1-mem/114);
     const ring=document.getElementById('avatarRing');
     if(ring){ ring.style.strokeDasharray=circ; ring.style.strokeDashoffset=offset; }
   }
 
+  // ── DAY SHEET ──
   window.openSheet=async(dateKey)=>{
     if(dateKey>todayKey||dateKey<signupDate) return;
     sheetDateKey=dateKey; await loadDayData(dateKey);
@@ -711,9 +794,9 @@
   };
 
   (function(){
-    let sX=0, sY=0;
+    let sX=0,sY=0;
     document.getElementById('sheet').addEventListener('touchstart',e=>{ sX=e.touches[0].clientX; sY=e.touches[0].clientY; },{passive:true});
-    document.getElementById('sheet').addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-sX, dy=e.changedTouches[0].clientY-sY; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) navigateSheet(dx<0?1:-1); },{passive:true});
+    document.getElementById('sheet').addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-sX,dy=e.changedTouches[0].clientY-sY; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) navigateSheet(dx<0?1:-1); },{passive:true});
   })();
 
   window.navigateSheet=async(dir)=>{
@@ -782,6 +865,7 @@
     buildStrip(); updateStreak(); updateYearlyStats();
   };
 
+  // ── CALENDAR ──
   window.openCal=()=>{ calYear=today.getFullYear(); calMonth=today.getMonth(); loadMonthData(calYear,calMonth).then(buildCal); document.getElementById('calModal').classList.add('open'); };
   window.closeCal=()=>document.getElementById('calModal').classList.remove('open');
   window.handleCalBg=(e)=>{ if(e.target===document.getElementById('calModal')) closeCal(); };
@@ -818,6 +902,22 @@
   }
 
   // ── HIFZ ──
+  // hifzData[num] = { s: 0|1|2, memorizedOn, reviews: [{date,interval}], nextDue, postponedTo }
+  // s: 0=not started, 1=learning, 2=memorized
+
+  function getHS(v){ return typeof v==='object'?v.s:(v||0); }
+  function getHifzState(num){ return getHS(hifzData[num]); }
+  function getHifzField(num,field){ const v=hifzData[num]; return typeof v==='object'?v[field]:null; }
+
+  function calcNextDue(reviews){
+    if(!reviews||!reviews.length) return addDays(todayKey,1);
+    const count=reviews.length;
+    const intervalIdx=Math.min(count-1, SR_INTERVALS.length-1);
+    const interval=SR_INTERVALS[intervalIdx];
+    const lastReview=reviews[reviews.length-1].date;
+    return addDays(lastReview, interval);
+  }
+
   async function loadHifzData(){
     try{
       const snap=await getDoc(doc(db,'users',currentUser.uid));
@@ -829,69 +929,228 @@
   }
 
   window.openHifz=async()=>{
-    await loadHifzData(); buildHifzList(); updateAvatarRing();
+    await loadHifzData(); buildHifzSheet();
     document.getElementById('hifzSheet').classList.add('open');
   };
   window.closeHifz=(e)=>{ if(e.target===document.getElementById('hifzSheet')) document.getElementById('hifzSheet').classList.remove('open'); };
 
-  function getHifzState(num){ const v=hifzData[num]; return typeof v==='object'?v.s:(v||0); }
-  function getHifzDate(num,field){ const v=hifzData[num]; return typeof v==='object'?v[field]:null; }
+  function buildHifzSheet(){
+    buildHifzProgress();
+    buildHifzDueSection();
+    buildHifzList();
+    buildHifzReviewLog();
+    updateAvatarRing();
+  }
 
-  function buildHifzList(){
-    const list=document.getElementById('hifzList'); list.innerHTML='';
-    const memorized=SURAHS.filter(s=>getHifzState(s[0])===3).length;
+  function buildHifzProgress(){
+    const memorized=SURAHS.filter(s=>getHifzState(s[0])===2).length;
     const pct=Math.round((memorized/114)*100);
     document.getElementById('hifzCount').textContent=`${memorized} / 114 surahs`;
     document.getElementById('hifzBar').style.width=pct+'%';
+  }
 
+  function buildHifzDueSection(){
+    const el=document.getElementById('hifzDueSection'); el.innerHTML='';
+    const dueSurahs=[];
+    SURAHS.forEach(s=>{
+      const num=s[0], state=getHifzState(num);
+      if(state===0) return;
+      const reviews=getHifzField(num,'reviews')||[];
+      if(!reviews.length) return;
+      const postponedTo=getHifzField(num,'postponedTo');
+      let nextDue=getHifzField(num,'nextDue')||calcNextDue(reviews);
+      if(postponedTo&&postponedTo>todayKey) nextDue=postponedTo;
+      const daysUntilDue=daysDiff(todayKey,nextDue);
+      const daysOverdue=daysUntilDue<0?Math.abs(daysUntilDue):0;
+      const isDueToday=nextDue===todayKey;
+      const isOverdue=nextDue<todayKey;
+      if(isOverdue||isDueToday) dueSurahs.push({num,name:s[1],ayahs:s[3],daysOverdue,isDueToday,nextDue});
+    });
+
+    if(!dueSurahs.length) return;
+
+    dueSurahs.sort((a,b)=>b.daysOverdue-a.daysOverdue);
+
+    const sec=document.createElement('div'); sec.className='hifz-due-section';
+    const overdueCnt=dueSurahs.filter(s=>s.daysOverdue>0).length;
+    const todayCnt=dueSurahs.filter(s=>s.isDueToday).length;
+    sec.innerHTML=`<div class="hifz-due-title">
+      Due for review
+      ${overdueCnt?`<span class="due-badge overdue">${overdueCnt} overdue</span>`:''}
+      ${todayCnt?`<span class="due-badge today">${todayCnt} today</span>`:''}
+    </div>`;
+
+    dueSurahs.forEach(s=>{
+      const reviewedToday=isReviewedToday(s.num);
+      const item=document.createElement('div'); item.className='due-item';
+      item.innerHTML=`
+        <div class="due-item-left">
+          <div class="due-item-name">${s.name}</div>
+          <div class="due-item-meta ${s.daysOverdue>0?'overdue':'today'}">${s.daysOverdue>0?`${s.daysOverdue} day${s.daysOverdue!==1?'s':''} overdue`:'Due today'}</div>
+        </div>
+        <div class="due-item-actions">
+          <button class="due-postpone-btn" onclick="openPostpone(${s.num},'${s.name}')">Later…</button>
+          <button class="due-review-btn ${reviewedToday?'done':''}" onclick="logReview(${s.num})" title="Mark reviewed">
+            ${reviewedToday?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`:'🔄'}
+          </button>
+        </div>`;
+      sec.appendChild(item);
+    });
+    el.appendChild(sec);
+  }
+
+  function isReviewedToday(num){
+    const reviews=getHifzField(num,'reviews')||[];
+    return reviews.length>0&&reviews[reviews.length-1].date===todayKey;
+  }
+
+  function buildHifzList(){
+    const el=document.getElementById('hifzList'); el.innerHTML='';
     const byJuz={};
     SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s); });
 
     for(let juz=1;juz<=30;juz++){
       if(!byJuz[juz]) continue;
       const surahs=byJuz[juz];
-      const memInJuz=surahs.filter(s=>getHifzState(s[0])===3).length;
+      const memInJuz=surahs.filter(s=>getHifzState(s[0])===2).length;
       const section=document.createElement('div'); section.className='juz-section';
       section.innerHTML=`<div class="juz-title">Juz ${juz}<span class="juz-count">${memInJuz}/${surahs.length} memorized</span></div>`;
 
       surahs.forEach(s=>{
         const [num,nameEn,nameAr,ayahs]=s;
         const state=getHifzState(num);
-        const memorizedOn=getHifzDate(num,'memorizedOn');
-        const reviewedOn=getHifzDate(num,'reviewedOn');
-        const btnClass=['','s1','s2','s3'][state];
-        const stateLabels=['Not started','Learning','Reviewing','Memorized'];
-        const row=document.createElement('div'); row.className='surah-row';
+        const memorizedOn=getHifzField(num,'memorizedOn');
+        const reviews=getHifzField(num,'reviews')||[];
+        const lastReviewed=reviews.length?reviews[reviews.length-1].date:null;
+        const reviewedToday=reviews.length&&reviews[reviews.length-1].date===todayKey;
+        const nextDue=state>0&&reviews.length?(getHifzField(num,'nextDue')||calcNextDue(reviews)):null;
+        const postponedTo=getHifzField(num,'postponedTo');
+        const effectiveDue=postponedTo&&postponedTo>todayKey?postponedTo:nextDue;
+        const daysUntil=effectiveDue?daysDiff(todayKey,effectiveDue):null;
+
+        let rowClass='surah-row';
+        if(state===1) rowClass+=' learning';
+        if(state===2) rowClass+=' memorized';
+
+        let dueHtml='';
+        if(effectiveDue&&state>0&&reviews.length){
+          if(daysUntil<0) dueHtml=`<div class="surah-due overdue">⚠ ${Math.abs(daysUntil)}d overdue</div>`;
+          else if(daysUntil===0) dueHtml=`<div class="surah-due soon">Due today</div>`;
+          else if(daysUntil<=3) dueHtml=`<div class="surah-due soon">Due in ${daysUntil} day${daysUntil!==1?'s':''}</div>`;
+          else dueHtml=`<div class="surah-due ok">Next review in ${daysUntil}d</div>`;
+        }
+
+        const stateLabels=['Not started','Learning','Memorized'];
+        const row=document.createElement('div'); row.className=rowClass;
+        row.onclick=()=>tapSurahRow(num, nameEn, state);
         row.innerHTML=`
           <span class="surah-num">${num}</span>
           <div class="surah-info">
             <div class="surah-name">${nameEn}</div>
             <div class="surah-arabic">${nameAr}</div>
             <div class="surah-meta">${ayahs} ayahs · ${stateLabels[state]}</div>
-            ${memorizedOn?`<div class="surah-date" style="color:var(--gold);">✦ Memorized ${memorizedOn}</div>`:''}
-            ${reviewedOn?`<div class="surah-date" style="color:#4A90D9;">🔄 Last reviewed ${reviewedOn}</div>`:''}
+            ${memorizedOn?`<div class="surah-date-memorized">✦ Memorized ${memorizedOn}</div>`:''}
+            ${lastReviewed?`<div class="surah-date-reviewed">${reviewedToday?'✓ Reviewed today':'🔄 Last reviewed '+lastReviewed}</div>`:''}
+            ${dueHtml}
           </div>
-          <button class="surah-state-btn ${btnClass}" onclick="cycleHifz(${num})">
-            ${state===0?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`:state===1?'📝':state===2?'🔄':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`}
-          </button>`;
+          ${state>0?`<button class="surah-review-btn ${reviewedToday?'reviewed':''}" onclick="event.stopPropagation();logReview(${num})" title="Log review">
+            ${reviewedToday?`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`:'🔄'}
+          </button>`:''}`;
         section.appendChild(row);
       });
-      list.appendChild(section);
+      el.appendChild(section);
     }
   }
 
-  window.cycleHifz=async(num)=>{
-    const cur=getHifzState(num), next=cur>=3?0:cur+1;
-    const todayStr=new Date().toISOString().split('T')[0];
-    const existing=typeof hifzData[num]==='object'?hifzData[num]:{};
-    hifzData[num]={
-      s:next,
-      memorizedOn:next===3?todayStr:(existing.memorizedOn||null),
-      reviewedOn:next===2?todayStr:(next===0?null:(existing.reviewedOn||null)),
-    };
-    await saveHifzData(); buildHifzList(); updateAvatarRing();
+  function buildHifzReviewLog(){
+    const el=document.getElementById('hifzReviewLog'); el.innerHTML='';
+    const byJuz={};
+    SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s[0]); });
+
+    const last7=Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()-i); return fmtKey(d); });
+    const hasAny=last7.some(date=>{
+      return SURAHS.some(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+    });
+    if(!hasAny) return;
+
+    const sec=document.createElement('div'); sec.className='review-log-section';
+    sec.innerHTML='<div class="review-log-title">📋 Recent Reviews</div>';
+
+    last7.forEach(date=>{
+      const reviewed=SURAHS.filter(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+      if(!reviewed.length) return;
+
+      const block=document.createElement('div'); block.className='review-day-block';
+      const label=date===todayKey?'Today':date===last7[1]?'Yesterday':keyToDate(date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      block.innerHTML=`<div class="review-day-label">${label} — ${reviewed.length} surah${reviewed.length!==1?'s':''}</div>`;
+      const items=document.createElement('div'); items.className='review-day-items';
+
+      // Check if any full Juz was reviewed
+      const reviewedNums=new Set(reviewed.map(s=>s[0]));
+      const shownJuz=new Set();
+      reviewed.forEach(s=>{
+        const juz=s[4];
+        if(shownJuz.has(juz)) return;
+        const juzSurahs=byJuz[juz];
+        const allReviewed=juzSurahs.every(n=>{ const r=getHifzField(n,'reviews')||[]; return r.some(rv=>rv.date===date); });
+        if(allReviewed){ shownJuz.add(juz); const i=document.createElement('div'); i.className='review-day-item juz-complete'; i.textContent=`✓ Juz ${juz} — complete`; items.appendChild(i); }
+        else if(!shownJuz.has(juz)){ const i=document.createElement('div'); i.className='review-day-item'; i.textContent=s[1]; items.appendChild(i); }
+      });
+
+      block.appendChild(items); sec.appendChild(block);
+    });
+    el.appendChild(sec);
+  }
+
+  window.tapSurahRow=async(num, name, currentState)=>{
+    if(currentState===2){
+      // Already memorized — show confirm before resetting
+      showConfirm(`Reset "${name}" to Not started? The memorization date will be cleared but your review history is kept.`, async()=>{
+        const existing=hifzData[num]||{};
+        hifzData[num]={ ...existing, s:0, memorizedOn:null };
+        await saveHifzData(); buildHifzSheet();
+      });
+    } else {
+      const next=currentState+1; // 0→1 or 1→2
+      const existing=typeof hifzData[num]==='object'?hifzData[num]:{};
+      hifzData[num]={ ...existing, s:next, memorizedOn:next===2?todayKey:(existing.memorizedOn||null) };
+      await saveHifzData(); buildHifzSheet();
+    }
   };
 
+  window.logReview=async(num)=>{
+    if(isReviewedToday(num)) return; // already reviewed today
+    const existing=typeof hifzData[num]==='object'?hifzData[num]:{s:1};
+    const reviews=[...(existing.reviews||[]),{date:todayKey,interval:SR_INTERVALS[Math.min((existing.reviews||[]).length,SR_INTERVALS.length-1)]}];
+    const nextDue=calcNextDue(reviews);
+    hifzData[num]={ ...existing, reviews, nextDue, postponedTo:null };
+    await saveHifzData(); buildHifzSheet();
+  };
+
+  // Postpone
+  window.openPostpone=(num,name)=>{
+    postponeTarget=num;
+    document.getElementById('postponeSurahName').textContent=name;
+    document.getElementById('postponePopup').classList.add('open');
+  };
+  window.closePostpone=()=>{ document.getElementById('postponePopup').classList.remove('open'); postponeTarget=null; };
+  window.confirmPostpone=async(days)=>{
+    if(postponeTarget===null) return;
+    const existing=typeof hifzData[postponeTarget]==='object'?hifzData[postponeTarget]:{s:1};
+    hifzData[postponeTarget]={ ...existing, postponedTo:addDays(todayKey,days) };
+    await saveHifzData(); closePostpone(); buildHifzSheet();
+  };
+
+  // Confirm
+  function showConfirm(text, onYes){
+    document.getElementById('confirmText').textContent=text;
+    document.getElementById('confirmPopup').classList.add('open');
+    confirmCallback=onYes;
+  }
+  window.closeConfirm=()=>{ document.getElementById('confirmPopup').classList.remove('open'); confirmCallback=null; };
+  document.getElementById('confirmYesBtn').onclick=async()=>{ if(confirmCallback) await confirmCallback(); closeConfirm(); };
+
+  // ── MENU ──
   window.openMenu=()=>{
     document.getElementById('menuOverlay').style.display='block';
     const m=document.getElementById('sideMenu'); m.style.display='block';
