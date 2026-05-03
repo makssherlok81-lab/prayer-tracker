@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prayer Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f4ef; --card: #ffffff; --text: #1a1a18; --text2: #6b6b67;
+      --border: rgba(0,0,0,0.09); --border2: rgba(0,0,0,0.16);
+      --green: #0F6E56; --green-mid: #1D9E75; --green-pale: #E1F5EE;
+      --amber: #EF9F27; --amber-dark: #412402; --gold: #D4A017;
+      --violet: #7B3F9E; --violet2: #B05070; --r: 12px; --rl: 20px;
+      --blue: #4A90D9; --blue-pale: #E8F4FF;
+      --red: #C0392B; --red-pale: #FDECEA;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 32px 16px 60px; }
+    #authScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; width: 100%; max-width: 400px; }
+    .auth-logo { width: 72px; height: 72px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .auth-title { font-size: 26px; font-weight: 600; color: var(--text); margin-bottom: 8px; text-align: center; }
+    .auth-sub { font-size: 14px; color: var(--text2); text-align: center; margin-bottom: 36px; line-height: 1.5; }
+    .google-btn { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid var(--border2); border-radius: 8px; padding: 14px 24px; font-size: 15px; font-weight: 500; color: var(--text); cursor: pointer; transition: box-shadow .2s, transform .1s; width: 100%; }
+    .google-btn:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    #mainApp { display: none; width: 100%; max-width: 680px; }
+    #hdr { background: var(--green); border-radius: var(--rl) var(--rl) 0 0; padding: 28px 36px 22px; user-select: none; }
+    .hdr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .burger-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:0;margin-right:10px;line-height:1;flex-shrink:0; }
+    .burger-btn:hover { color:white; }
+    .hdr-right { display: flex; align-items: center; gap: 12px; }
+    .avatar-wrap { position:relative; width:36px; height:36px; cursor:pointer; flex-shrink:0; }
+    .avatar-ring-svg { position:absolute; top:0; left:0; width:36px; height:36px; transform:rotate(-90deg); }
+    .avatar-ring-bg { fill:none; stroke:rgba(255,255,255,0.15); stroke-width:2.5; }
+    .avatar-ring-fill { fill:none; stroke:#D4A017; stroke-width:2.5; stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
+    .avatar-btn { position:absolute; top:4px; left:4px; width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.2); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:600; }
+    .avatar-btn:hover { background:rgba(255,255,255,0.3); }
+    .app-date { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 4px; }
+    .hijri-date { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 16px; }
+    #strip { display: flex; gap: 6px; }
+    .strip-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 2px 0; }
+    .strip-letter { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; }
+    .strip-circle-wrap { position: relative; width: 32px; height: 32px; }
+    .strip-ring { position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid transparent; transition: border-color .3s; }
+    .strip-ring.fasted { border-color: #B05070; }
+    .strip-num { position: absolute; inset: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45); transition: all .2s; }
+    .strip-num.partial { background: rgba(239,159,39,0.45); color: #fff; }
+    .strip-num.done { background: var(--amber); color: var(--amber-dark); }
+    .strip-num.today { border: 1.5px solid rgba(255,255,255,0.5); color: #fff; }
+    .strip-num.today.done { border-color: var(--amber); }
+    .strip-num.future { opacity: .25; }
+    #streakRow { display: flex; align-items: stretch; background: var(--card); border-bottom: 0.5px solid var(--border); }
+    .streak-block { flex: 1; display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+    .streak-block + .streak-block { border-left: 0.5px solid var(--border); }
+    #fireWrap { width: 42px; height: 50px; display: flex; align-items: center; justify-content: center; transition: all .4s; flex-shrink: 0; }
+    .fast-icon-big { font-size: 26px; flex-shrink: 0; }
+    .streak-big { font-size: 28px; font-weight: 500; color: var(--text); }
+    .streak-big.fast { color: var(--violet); }
+    .streak-unit { font-size: 13px; color: var(--text2); }
+    .streak-unit.fast { color: var(--violet2); }
+    .streak-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    #prayersArea { background: var(--card); padding: 20px 36px; }
+    #prayersList { display: flex; flex-direction: column; gap: 8px; }
+    .prayer-card { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border: 0.5px solid var(--border); border-radius: var(--r); background: var(--card); transition: all .3s ease; }
+    .prayer-card[data-state="1"] { border-color: rgba(29,158,117,0.3); background: rgba(225,245,238,0.4); }
+    .prayer-card[data-state="1"][data-max="1"] { border-color: rgba(212,160,23,0.4); background: rgba(250,238,218,0.5); }
+    .prayer-card[data-state="2"] { border-color: rgba(212,160,23,0.4); background: rgba(250,238,218,0.5); }
+    .prayer-info { flex: 1; }
+    .prayer-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .prayer-meta { font-size: 12px; color: var(--green); margin-top: 2px; }
+    .prayer-state { font-size: 11px; margin-top: 2px; color: var(--text2); }
+    .chk { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--green-mid); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+    .chk:hover { transform: scale(1.1); } .chk:active { transform: scale(.92); }
+    .chk[data-state="1"] { background: var(--green); border-color: var(--green); }
+    .chk[data-state="2"] { background: var(--gold); border-color: var(--gold); }
+    .chk[data-state="1"][data-max="1"] { background: var(--gold); border-color: var(--gold); }
+    .friday-switch { font-size: 12px; color: var(--green); background: none; border: none; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px 0; display: block; margin-top: 4px; }
+    .all-done-msg { text-align: center; padding: 28px; }
+    .all-done-msg .done-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .all-done-msg .done-sub { font-size: 13px; color: var(--text2); }
+    .section-divider { height: 8px; background: var(--bg); }
+    #fastingArea { background: var(--card); padding: 0 36px 20px; }
+    #fastingCard { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: var(--r); border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all .35s ease; margin-top: 4px; }
+    #fastingCard.fasting-on { background: linear-gradient(135deg, #3D2060, #B05070); border-color: transparent; }
+    .fasting-icon { font-size: 20px; flex-shrink: 0; }
+    .fasting-label { font-size: 15px; font-weight: 500; color: var(--text); transition: color .3s; }
+    .fasting-sub { font-size: 12px; color: var(--text2); margin-top: 2px; transition: color .3s; }
+    #fastingCard.fasting-on .fasting-label, #fastingCard.fasting-on .fasting-sub { color: white; }
+    .fasting-chk { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border2); background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .3s; }
+    #fastingCard.fasting-on .fasting-chk { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); }
+    #bottomBar { padding: 13px 36px; border-top: 0.5px solid var(--border); background: var(--bg); border-radius: 0 0 var(--rl) var(--rl); display: flex; justify-content: space-between; align-items: center; }
+    #bottomLbl { font-size: 13px; color: var(--text2); }
+    /* SHEET */
+    #sheetOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: flex-end; justify-content: center; }
+    @media (max-width: 768px) { .sheet-nav-btn { display: none !important; } }
+    #sheetOverlay.open { display: flex; }
+    #sheet { background: var(--card); border-radius: 20px 20px 0 0; width: 100%; max-width: 680px; max-height: 85vh; overflow-y: auto; padding: 0 0 40px; transform: translateY(100%); transition: transform .35s cubic-bezier(.32,.72,0,1); }
+    #sheetOverlay.open #sheet { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 14px auto 0; }
+    .sheet-header { padding: 16px 28px 12px; border-bottom: 0.5px solid var(--border); }
+    .sheet-date { font-size: 17px; font-weight: 600; color: var(--text); }
+    .sheet-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+    .sheet-section { padding: 18px 28px 4px; }
+    .sheet-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text2); margin-bottom: 12px; }
+    .sheet-prayer-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+    .sheet-prayer-row:last-child { border-bottom: none; }
+    .sheet-prayer-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .sheet-prayer-arabic { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .sheet-state-label { font-size: 11px; margin-top: 3px; }
+    .sheet-state-label.s0 { color: var(--text2); } .sheet-state-label.s1 { color: var(--green); } .sheet-state-label.s2 { color: var(--gold); }
+    .vol-toggle { width: 48px; height: 26px; border-radius: 13px; background: var(--border2); border: none; cursor: pointer; position: relative; transition: background .25s; flex-shrink: 0; }
+    .vol-toggle.on { background: var(--green); }
+    .vol-toggle::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: left .25s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .vol-toggle.on::after { left: 25px; }
+    /* CALENDAR */
+    #calModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    #calModal.open { display: flex; }
+    #calInner { background: var(--card); border-radius: var(--r); width: 360px; max-width: 100%; padding: 24px; border: 0.5px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .cal-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .cal-nav { display: flex; align-items: center; gap: 10px; }
+    .cal-nav-btn { background: none; border: 0.5px solid var(--border2); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 14px; color: var(--text2); }
+    .cal-nav-btn:disabled { opacity: .3; cursor: default; }
+    .cal-month-title { font-size: 16px; font-weight: 600; color: var(--text); min-width: 130px; text-align: center; }
+    .close-btn { background: transparent; border: 0.5px solid var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 12px; color: var(--text2); font-family: inherit; }
+    #calHead, #calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    #calHead { margin: 16px 0 6px; }
+    .cal-day-name { font-size: 11px; color: var(--text2); text-align: center; font-weight: 500; }
+    .cal-cell-wrap { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; position: relative; }
+    .cal-cell { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text); cursor: pointer; transition: all .15s; }
+    .cal-cell:hover:not(.future):not(.before-signup) { background: var(--green-pale); }
+    .cal-cell.partial { background: rgba(239,159,39,0.35); color: #6b4400; font-weight: 500; }
+    .cal-cell.completed { background: var(--amber); color: var(--amber-dark); font-weight: 500; }
+    .cal-cell.today { box-shadow: 0 0 0 1.5px var(--green-mid); }
+    .cal-cell.future { color: var(--text2); opacity: .3; cursor: default; }
+    .cal-cell.before-signup { opacity: .2; cursor: default; }
+    .fast-ring-cal { position: absolute; width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid #B05070; pointer-events: none; }
+    .cal-legend { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { font-size: 11px; color: var(--text2); }
+    /* USER MENU */
+    #userMenu { display: none; position: fixed; top: 0; right: 0; z-index: 500; background: var(--card); border-radius: 0 0 0 var(--r); border: 0.5px solid var(--border); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-width: 260px; max-width: 90vw; }
+    #userMenu.open { display: block; }
+    .user-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .user-email { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+    .signout-btn { width: 100%; background: #fee; border: 0.5px solid rgba(200,0,0,0.2); border-radius: 6px; padding: 9px; cursor: pointer; font-size: 13px; color: #c00; font-family: inherit; }
+    /* HIFZ */
+    #hifzSheet { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:flex-end; justify-content:center; }
+    #hifzSheet.open { display:flex; }
+    #hifzInner { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:680px; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); }
+    #hifzSheet.open #hifzInner { transform:translateY(0); }
+    .hifz-header { position:sticky; top:0; background:var(--card); z-index:10; padding:0 24px 12px; border-bottom:0.5px solid var(--border); }
+    .hifz-handle { width:36px; height:4px; background:var(--border2); border-radius:2px; margin:14px auto 12px; }
+    .hifz-title { font-size:18px; font-weight:600; color:var(--text); margin-bottom:10px; }
+    .hifz-progress-wrap { background:var(--bg); border-radius:8px; padding:12px 14px; }
+    .hifz-progress-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .hifz-progress-label { font-size:12px; color:var(--text2); }
+    .hifz-progress-num { font-size:13px; font-weight:600; color:var(--gold); }
+    .hifz-bar-bg { height:6px; background:var(--border); border-radius:3px; }
+    .hifz-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--green),var(--gold)); transition:width .4s ease; }
+    .hifz-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .hifz-leg { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text2); }
+    .hifz-leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    /* Due section */
+    .hifz-due-section { padding:14px 24px 4px; }
+    .hifz-due-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .due-badge { font-size:10px; font-weight:500; padding:2px 7px; border-radius:20px; }
+    .due-badge.overdue { background:var(--red-pale); color:var(--red); }
+    .due-badge.today { background:var(--blue-pale); color:var(--blue); }
+    .due-item { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:0.5px solid var(--border); }
+    .due-item:last-child { border-bottom:none; }
+    .due-item-left { flex:1; }
+    .due-item-name { font-size:13px; font-weight:500; color:var(--text); }
+    .due-item-meta { font-size:11px; margin-top:1px; }
+    .due-item-meta.overdue { color:var(--red); }
+    .due-item-meta.today { color:var(--blue); }
+    .due-item-actions { display:flex; align-items:center; gap:6px; }
+    .due-review-btn { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--blue); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all .2s; }
+    .due-review-btn.done { background:var(--blue); border-color:var(--blue); }
+    .due-postpone-btn { font-size:11px; color:var(--text2); background:var(--bg); border:0.5px solid var(--border2); border-radius:6px; padding:4px 8px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .due-postpone-btn:hover { background:var(--border); }
+    /* Postpone popup */
+    #postponePopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    #postponePopup.open { display:flex; }
+    .postpone-inner { background:var(--card); border-radius:var(--r); padding:24px; width:300px; max-width:100%; }
+    .postpone-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+    .postpone-sub { font-size:12px; color:var(--text2); margin-bottom:16px; }
+    .postpone-options { display:flex; flex-direction:column; gap:8px; }
+    .postpone-opt { background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:11px 14px; cursor:pointer; font-size:13px; color:var(--text); font-family:inherit; text-align:left; transition:background .15s; }
+    .postpone-opt:hover { background:var(--green-pale); border-color:var(--green-mid); }
+    .postpone-cancel { margin-top:8px; background:none; border:none; cursor:pointer; font-size:12px; color:var(--text2); font-family:inherit; width:100%; padding:8px; }
+    /* Confirm popup */
+    #confirmPopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    #confirmPopup.open { display:flex; }
+    .confirm-inner { background:var(--card); border-radius:var(--r); padding:24px; width:300px; max-width:100%; }
+    .confirm-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:8px; }
+    .confirm-sub { font-size:13px; color:var(--text2); margin-bottom:20px; line-height:1.5; }
+    .confirm-btns { display:flex; gap:8px; }
+    .confirm-yes { flex:1; background:var(--red); color:white; border:none; border-radius:8px; padding:10px; cursor:pointer; font-size:13px; font-family:inherit; }
+    .confirm-no { flex:1; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:10px; cursor:pointer; font-size:13px; color:var(--text); font-family:inherit; }
+    /* Juz sections */
+    .juz-section { padding:14px 24px 4px; }
+    .juz-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+    .juz-count { font-size:10px; font-weight:400; }
+    .surah-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); cursor:pointer; transition:background .15s; border-radius:6px; }
+    .surah-row:last-child { border-bottom:none; }
+    .surah-row:hover { background:rgba(0,0,0,0.02); }
+    .surah-row.learning { background:rgba(225,245,238,0.5); border-color:rgba(29,158,117,0.3); }
+    .surah-row.memorized { background:rgba(212,160,23,0.08); border-color:rgba(212,160,23,0.2); }
+    .surah-num { font-size:11px; color:var(--text2); width:24px; flex-shrink:0; text-align:center; }
+    .surah-info { flex:1; }
+    .surah-name { font-size:14px; font-weight:500; color:var(--text); }
+    .surah-arabic { font-size:12px; color:var(--text2); margin-top:1px; }
+    .surah-meta { font-size:10px; color:var(--text2); margin-top:2px; }
+    .surah-date-memorized { font-size:10px; color:var(--gold); margin-top:2px; }
+    .surah-date-reviewed { font-size:10px; color:var(--blue); margin-top:1px; }
+    .surah-due { font-size:10px; margin-top:2px; }
+    .surah-due.overdue { color:var(--red); }
+    .surah-due.soon { color:var(--amber); }
+    .surah-due.ok { color:var(--green); }
+    .surah-review-btn { width:32px; height:32px; border-radius:50%; border:1.5px solid var(--border2); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all .2s; flex-shrink:0; }
+    .surah-review-btn:hover { transform:scale(1.1); }
+    .surah-review-btn.reviewed { background:var(--blue); border-color:var(--blue); }
+    /* Review log */
+    .review-log-section { padding:14px 24px 4px; }
+    .review-log-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:12px; }
+    .review-day-block { margin-bottom:12px; }
+    .review-day-label { font-size:12px; font-weight:500; color:var(--text); margin-bottom:6px; }
+    .review-day-items { display:flex; flex-direction:column; gap:3px; }
+    .review-day-item { font-size:12px; color:var(--text2); padding:4px 10px; background:var(--bg); border-radius:6px; }
+    .review-day-item.juz-complete { color:var(--green); font-weight:500; }
+  </style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-logo">
+    <svg width="36" height="36" viewBox="0 0 40 56" fill="none">
+      <path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="rgba(255,255,255,0.9)"/>
+      <path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="rgba(255,255,255,0.5)"/>
+    </svg>
+  </div>
+  <div class="auth-title">Prayer Tracker</div>
+  <div class="auth-sub">Track your daily prayers, fasting and voluntary worship. Sign in to sync across all your devices.</div>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    Continue with Google
+  </button>
+</div>
+
+<div id="mainApp">
+  <div id="hdr">
+    <div class="hdr-top">
+      <button class="burger-btn" onclick="openMenu()">&#9776;</button>
+      <div class="hdr-right">
+        <div class="avatar-wrap" onclick="toggleUserMenu()">
+          <svg class="avatar-ring-svg" viewBox="0 0 36 36">
+            <circle class="avatar-ring-bg" cx="18" cy="18" r="16"/>
+            <circle class="avatar-ring-fill" id="avatarRing" cx="18" cy="18" r="16" stroke-dasharray="100.53" stroke-dashoffset="100.53"/>
+          </svg>
+          <button class="avatar-btn" id="avatarBtn">?</button>
+        </div>
+      </div>
+    </div>
+    <div class="app-date" id="appDate"></div>
+    <div class="hijri-date" id="hijriDate"></div>
+    <div id="strip"></div>
+  </div>
+
+  <div id="streakRow">
+    <div class="streak-block">
+      <div id="fireWrap"></div>
+      <div>
+        <div><span class="streak-big" id="streakNum">0</span><span class="streak-unit"> day streak</span></div>
+        <div class="streak-sub" id="streakSub"></div>
+      </div>
+    </div>
+    <div class="streak-block">
+      <div class="fast-icon-big">🌙</div>
+      <div>
+        <div><span class="streak-big fast" id="fastStreakNum">0</span><span class="streak-unit fast"> days fasted</span></div>
+        <div class="streak-sub" id="fastStreakSub"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="prayersArea">
+    <div id="prayersList"></div>
+    <div id="allDoneMsg" class="all-done-msg" style="display:none;">
+      <div class="done-title">All prayers completed ✦</div>
+      <div class="done-sub">Alhamdulillah. May your day be filled with peace and blessings.</div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <div id="fastingArea">
+    <div style="padding:14px 36px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);">Today's Fasting</div>
+    <div style="padding:0 36px 20px;">
+      <div id="fastingCard" onclick="toggleFasting()">
+        <span class="fasting-icon">🌙</span>
+        <div>
+          <div class="fasting-label" id="fastingLabel">Not fasting today</div>
+          <div class="fasting-sub" id="fastingSub">Tap to mark today's fast</div>
+        </div>
+        <div class="fasting-chk" id="fastingChk">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottomBar">
+    <span id="bottomLbl">Loading…</span>
+  </div>
+</div>
+
+<!-- DAY SHEET -->
+<div id="sheetOverlay" onclick="closeSheet(event)">
+  <button onclick="event.stopPropagation();navigateSheet(-1)" class="sheet-nav-btn" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">‹</button>
+  <button onclick="event.stopPropagation();navigateSheet(1)" class="sheet-nav-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;z-index:10;backdrop-filter:blur(4px);">›</button>
+  <div id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-date" id="sheetDate"></div>
+      <div class="sheet-sub" id="sheetSub"></div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Obligatory Prayers</div>
+      <div id="sheetPrayers"></div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Voluntary Prayers</div>
+      <div id="sheetVoluntary"></div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Fasting</div>
+      <div id="sheetFasting"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div id="calModal" onclick="handleCalBg(event)">
+  <div id="calInner" onclick="event.stopPropagation()">
+    <div class="cal-modal-head">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="calPrev" onclick="changeCalMonth(-1)">‹</button>
+        <div class="cal-month-title" id="calTitle"></div>
+        <button class="cal-nav-btn" id="calNext" onclick="changeCalMonth(1)">›</button>
+      </div>
+      <button class="close-btn" onclick="closeCal()">Close</button>
+    </div>
+    <div id="calHead"></div>
+    <div id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div><span class="legend-label">All prayers done</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(239,159,39,0.35)"></div><span class="legend-label">Some prayers</span></div>
+      <div class="legend-item"><div class="legend-dot" style="border:2.5px solid #B05070;background:transparent;width:12px;height:12px;border-radius:50%;"></div><span class="legend-label">Fasted</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDE MENU -->
+<div id="menuOverlay" onclick="closeMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:400;"></div>
+<div id="sideMenu" style="display:none;position:fixed;top:0;left:0;height:100%;width:300px;max-width:85vw;background:var(--card);z-index:401;transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);overflow-y:auto;padding:0 0 40px;">
+  <div style="padding:28px 24px 16px;border-bottom:0.5px solid var(--border);">
+    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Prayer Tracker</div>
+    <div style="font-size:16px;font-weight:500;color:var(--text);" id="menuNameSide"></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:3px;" id="menuSinceSide"></div>
+  </div>
+
+  <div style="padding:0 24px 8px;">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">📅 Calendar</div>
+    <button onclick="closeMenu();openCal();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View full calendar →</button>
+  </div>
+  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
+  <div style="padding:0 24px 8px;">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">📖 Hifz Tracker</div>
+    <button onclick="closeMenu();openHifz();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View surah progress →</button>
+  </div>
+  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
+  <div style="padding:0 24px 8px;">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">🤝 Challenges</div>
+    <div style="background:var(--bg);border-radius:var(--r);padding:16px;text-align:center;">
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Coming soon</div>
+      <div style="font-size:12px;color:var(--text2);">Invite friends & family to fast or pray together</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- USER MENU -->
+<div id="userMenu">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:0.5px solid var(--border);">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--green);flex-shrink:0;" id="menuAvatarCircle">?</div>
+    <div>
+      <div class="user-name" id="menuName" style="margin-bottom:0;"></div>
+      <div class="user-email" id="menuEmail" style="margin-bottom:0;"></div>
+    </div>
+  </div>
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Prayer & fasting</div>
+  <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days all 5 prayed</span>
+      <span style="font-size:20px;font-weight:500;color:#D4A017;" id="menuStatPrayer">—</span>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days fasted</span>
+      <span style="font-size:20px;font-weight:500;color:#7B3F9E;" id="menuStatFast">—</span>
+    </div>
+    <div style="height:0.5px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--text2);">Days with voluntary prayer</span>
+      <span style="font-size:20px;font-weight:500;color:#0F6E56;" id="menuStatVol">—</span>
+    </div>
+  </div>
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Hifz</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <span style="font-size:12px;color:var(--text2);">Surahs memorized</span>
+    <span style="font-size:20px;font-weight:500;color:#4A90D9;" id="menuStatHifz">—</span>
+  </div>
+  <button class="signout-btn" onclick="signOut()">Sign out</button>
+</div>
+
+<!-- HIFZ SHEET -->
+<div id="hifzSheet" onclick="closeHifz(event)">
+  <div id="hifzInner">
+    <div class="hifz-header">
+      <div class="hifz-handle"></div>
+      <div class="hifz-title">📖 Hifz Tracker</div>
+      <div class="hifz-progress-wrap">
+        <div class="hifz-progress-row">
+          <span class="hifz-progress-label">Memorized</span>
+          <span class="hifz-progress-num" id="hifzCount">0 / 114 surahs</span>
+        </div>
+        <div class="hifz-bar-bg"><div class="hifz-bar-fill" id="hifzBar" style="width:0%"></div></div>
+        <div class="hifz-legend">
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--gold)"></div>Memorized</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--green)"></div>Learning</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--blue)"></div>Reviewed today</div>
+          <div class="hifz-leg"><div class="hifz-leg-dot" style="background:var(--red)"></div>Overdue</div>
+        </div>
+      </div>
+    </div>
+    <div id="hifzDueSection"></div>
+    <div id="hifzList"></div>
+  </div>
+</div>
+
+<!-- POSTPONE POPUP -->
+<div id="postponePopup">
+  <div class="postpone-inner">
+    <div class="postpone-title">Postpone review</div>
+    <div class="postpone-sub" id="postponeSurahName"></div>
+    <div class="postpone-options">
+      <button class="postpone-opt" onclick="confirmPostpone(1)">Tomorrow</button>
+      <button class="postpone-opt" onclick="confirmPostpone(3)">In 3 days</button>
+      <button class="postpone-opt" onclick="confirmPostpone(7)">In a week</button>
+    </div>
+    <button class="postpone-cancel" onclick="closePostpone()">Cancel</button>
+  </div>
+</div>
+
+<!-- CONFIRM RESET POPUP -->
+<div id="confirmPopup">
+  <div class="confirm-inner">
+    <div class="confirm-title">Reset memorization?</div>
+    <div class="confirm-sub" id="confirmText">This will clear the memorization date and reset this surah to "Not started". Your review history will be kept.</div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-yes" id="confirmYesBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyBspu-SKYW74XWEqEL0-L4pFA_gEwgcvhs",
+    authDomain: "prayer-tracker-6e032.firebaseapp.com",
+    projectId: "prayer-tracker-6e032",
+    storageBucket: "prayer-tracker-6e032.firebasestorage.app",
+    messagingSenderId: "66232408397",
+    appId: "1:66232408397:web:2601743c8f222cc88fff04"
+  });
+  const auth = getAuth(app), db = getFirestore(app), provider = new GoogleAuthProvider();
+
+  const PRAYERS = [
+    { id:'fajr',name:'Fajr',arabic:'الفجر',hasSunnah:true },
+    { id:'dhuhr',name:'Dhuhr',arabic:'الظهر',hasSunnah:true },
+    { id:'asr',name:'Asr',arabic:'العصر',hasSunnah:false },
+    { id:'maghrib',name:'Maghrib',arabic:'المغرب',hasSunnah:true },
+    { id:'isha',name:'Isha',arabic:'العشاء',hasSunnah:true },
+  ];
+  const VOLUNTARY = [
+    { id:'ishraq',name:'Ishraq',arabic:'الإشراق' },
+    { id:'duha',name:'Duha',arabic:'الضحى' },
+    { id:'witr',name:'Witr',arabic:'الوتر' },
+    { id:'tahajjud',name:'Tahajjud',arabic:'التهجد' },
+  ];
+  const SURAHS = [
+    [1,'Al-Fatihah','الفاتحة',7,1],[2,'Al-Baqarah','البقرة',286,1],[3,"Ali 'Imran",'آل عمران',200,3],
+    [4,'An-Nisa','النساء',176,4],[5,"Al-Ma'idah",'المائدة',120,6],[6,"Al-An'am",'الأنعام',165,7],
+    [7,"Al-A'raf",'الأعراف',206,8],[8,'Al-Anfal','الأنفال',75,9],[9,'At-Tawbah','التوبة',129,10],
+    [10,'Yunus','يونس',109,11],[11,'Hud','هود',123,11],[12,'Yusuf','يوسف',111,12],
+    [13,"Ar-Ra'd",'الرعد',43,13],[14,'Ibrahim','إبراهيم',52,13],[15,'Al-Hijr','الحجر',99,14],
+    [16,'An-Nahl','النحل',128,14],[17,'Al-Isra','الإسراء',111,15],[18,'Al-Kahf','الكهف',110,15],
+    [19,'Maryam','مريم',98,16],[20,'Ta-Ha','طه',135,16],[21,'Al-Anbiya','الأنبياء',112,17],
+    [22,'Al-Hajj','الحج',78,17],[23,"Al-Mu'minun",'المؤمنون',118,18],[24,'An-Nur','النور',64,18],
+    [25,'Al-Furqan','الفرقان',77,18],[26,"Ash-Shu'ara",'الشعراء',227,19],[27,'An-Naml','النمل',93,19],
+    [28,'Al-Qasas','القصص',88,20],[29,"Al-'Ankabut",'العنكبوت',69,20],[30,'Ar-Rum','الروم',60,21],
+    [31,'Luqman','لقمان',34,21],[32,'As-Sajdah','السجدة',30,21],[33,'Al-Ahzab','الأحزاب',73,21],
+    [34,'Saba','سبأ',54,22],[35,'Fatir','فاطر',45,22],[36,'Ya-Sin','يس',83,22],
+    [37,'As-Saffat','الصافات',182,23],[38,'Sad','ص',88,23],[39,'Az-Zumar','الزمر',75,23],
+    [40,'Ghafir','غافر',85,24],[41,'Fussilat','فصلت',54,24],[42,'Ash-Shura','الشورى',53,25],
+    [43,'Az-Zukhruf','الزخرف',89,25],[44,'Ad-Dukhan','الدخان',59,25],[45,'Al-Jathiyah','الجاثية',37,25],
+    [46,'Al-Ahqaf','الأحقاف',35,26],[47,'Muhammad','محمد',38,26],[48,'Al-Fath','الفتح',29,26],
+    [49,'Al-Hujurat','الحجرات',18,26],[50,'Qaf','ق',45,26],[51,'Adh-Dhariyat','الذاريات',60,26],
+    [52,'At-Tur','الطور',49,27],[53,'An-Najm','النجم',62,27],[54,'Al-Qamar','القمر',55,27],
+    [55,'Ar-Rahman','الرحمن',78,27],[56,"Al-Waqi'ah",'الواقعة',96,27],[57,'Al-Hadid','الحديد',29,27],
+    [58,'Al-Mujadila','المجادلة',22,28],[59,'Al-Hashr','الحشر',24,28],[60,'Al-Mumtahanah','الممتحنة',13,28],
+    [61,'As-Saf','الصف',14,28],[62,"Al-Jumu'ah",'الجمعة',11,28],[63,'Al-Munafiqun','المنافقون',11,28],
+    [64,'At-Taghabun','التغابن',18,28],[65,'At-Talaq','الطلاق',12,28],[66,'At-Tahrim','التحريم',12,28],
+    [67,'Al-Mulk','الملك',30,29],[68,'Al-Qalam','القلم',52,29],[69,'Al-Haqqah','الحاقة',52,29],
+    [70,"Al-Ma'arij",'المعارج',44,29],[71,'Nuh','نوح',28,29],[72,'Al-Jinn','الجن',28,29],
+    [73,'Al-Muzzammil','المزمل',20,29],[74,'Al-Muddathir','المدثر',56,29],[75,'Al-Qiyamah','القيامة',40,29],
+    [76,'Al-Insan','الإنسان',31,29],[77,'Al-Mursalat','المرسلات',50,29],[78,'An-Naba','النبأ',40,30],
+    [79,"An-Nazi'at",'النازعات',46,30],[80,"'Abasa",'عبس',42,30],[81,'At-Takwir','التكوير',29,30],
+    [82,'Al-Infitar','الانفطار',19,30],[83,'Al-Mutaffifin','المطففين',36,30],[84,'Al-Inshiqaq','الانشقاق',25,30],
+    [85,'Al-Buruj','البروج',22,30],[86,'At-Tariq','الطارق',17,30],[87,"Al-A'la",'الأعلى',19,30],
+    [88,'Al-Ghashiyah','الغاشية',26,30],[89,'Al-Fajr','الفجر',30,30],[90,'Al-Balad','البلد',20,30],
+    [91,'Ash-Shams','الشمس',15,30],[92,'Al-Layl','الليل',21,30],[93,'Ad-Duha','الضحى',11,30],
+    [94,'Ash-Sharh','الشرح',8,30],[95,'At-Tin','التين',8,30],[96,"Al-'Alaq",'العلق',19,30],
+    [97,'Al-Qadr','القدر',5,30],[98,'Al-Bayyinah','البينة',8,30],[99,'Az-Zalzalah','الزلزلة',8,30],
+    [100,"Al-'Adiyat",'العاديات',11,30],[101,"Al-Qari'ah",'القارعة',11,30],[102,'At-Takathur','التكاثر',8,30],
+    [103,"Al-'Asr",'العصر',3,30],[104,'Al-Humazah','الهمزة',9,30],[105,'Al-Fil','الفيل',5,30],
+    [106,'Quraysh','قريش',4,30],[107,"Al-Ma'un",'الماعون',7,30],[108,'Al-Kawthar','الكوثر',3,30],
+    [109,'Al-Kafirun','الكافرون',6,30],[110,'An-Nasr','النصر',3,30],[111,'Al-Masad','المسد',5,30],
+    [112,'Al-Ikhlas','الإخلاص',4,30],[113,'Al-Falaq','الفلق',5,30],[114,'An-Nas','الناس',6,30],
+  ];
+  const SR_INTERVALS = [1, 3, 7, 14, 30]; // spaced repetition intervals in days
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const DLET=['S','M','T','W','T','F','S'];
+
+  let currentUser=null, signupDate=null, dayData={}, sheetDateKey=null, calYear, calMonth;
+  let hifzData={};
+  let postponeTarget=null, confirmCallback=null;
+  const today=new Date(), todayKey=fmtKey(today);
+
+  function fmtKey(d){ return d.toISOString().split('T')[0]; }
+  function keyToDate(k){ return new Date(k+'T12:00:00'); }
+  function isFriday(k){ return keyToDate(k).getDay()===5; }
+  function addDays(dateStr, n){ const d=keyToDate(dateStr); d.setDate(d.getDate()+n); return fmtKey(d); }
+  function daysDiff(a, b){ return Math.round((keyToDate(b)-keyToDate(a))/86400000); }
+
+  function toHijri(date){
+    const HM=["Muharram","Safar","Rabi al-Awwal","Rabi al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaban","Ramadan","Shawwal","Dhu al-Qidah","Dhu al-Hijjah"];
+    const jd=Math.floor((date.getTime()/86400000)+2440587.5);
+    let l=jd-1948440+10632; const n=Math.floor((l-1)/10631); l=l-10631*n+354;
+    const j=Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)+Math.floor(l/5670)*Math.floor((43*l)/15238);
+    l=l-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
+    const month=Math.floor((24*l)/709), day=l-Math.floor((709*month)/24), year=30*n+j-30;
+    return `${day} ${HM[month-1]} ${year} AH`;
+  }
+
+  function getPrayerIds(k){
+    const d=dayData[k]||{};
+    return (isFriday(k)&&!d.useDhuhrOnFriday)?['fajr','juma','asr','maghrib','isha']:['fajr','dhuhr','asr','maghrib','isha'];
+  }
+  function prayerCount(k){ const d=dayData[k]||{}; return getPrayerIds(k).filter(p=>(d[p]||0)>0).length; }
+  function allPrayersDone(k){ return prayerCount(k)===5; }
+
+  async function loadDayData(k){
+    if(dayData[k]!==undefined) return;
+    try{ const s=await getDoc(doc(db,'users',currentUser.uid,'days',k)); dayData[k]=s.exists()?s.data():{}; }
+    catch(e){ dayData[k]={}; }
+  }
+  async function saveDayData(k){ try{ await setDoc(doc(db,'users',currentUser.uid,'days',k),dayData[k]||{}); }catch(e){} }
+  async function loadMonthData(year,month){
+    const pad=n=>String(n).padStart(2,'0');
+    const start=`${year}-${pad(month+1)}-01`, end=`${year}-${pad(month+1)}-31`;
+    try{
+      const snap=await getDocs(query(collection(db,'users',currentUser.uid,'days'),where('__name__','>=',start),where('__name__','<=',end)));
+      snap.forEach(d=>{ if(dayData[d.id]===undefined) dayData[d.id]=d.data(); });
+    }catch(e){}
+  }
+
+  window.signInWithGoogle=async()=>{ try{ await signInWithPopup(auth,provider); }catch(e){ alert('Sign-in failed: '+e.message); } };
+  window.signOut=async()=>{ await fbSignOut(auth); window.location.reload(); };
+
+  onAuthStateChanged(auth,async user=>{
+    if(user){
+      currentUser=user;
+      const psnap=await getDoc(doc(db,'users',user.uid));
+      if(!psnap.exists()){ await setDoc(doc(db,'users',user.uid),{signupDate:todayKey,name:user.displayName,email:user.email}); signupDate=todayKey; }
+      else signupDate=psnap.data().signupDate||todayKey;
+      for(let i=-6;i<=0;i++){ const d=new Date(today); d.setDate(today.getDate()+i); await loadDayData(fmtKey(d)); }
+      await loadHifzData();
+      showApp();
+    } else {
+      document.getElementById('authScreen').style.display='flex';
+      document.getElementById('mainApp').style.display='none';
+    }
+  });
+
+  async function showApp(){
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+    document.getElementById('appDate').textContent=`${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+    document.getElementById('hijriDate').textContent=toHijri(today);
+    const ini=(currentUser.displayName||'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('avatarBtn').textContent=ini;
+    document.getElementById('menuName').textContent=currentUser.displayName||'';
+    document.getElementById('menuAvatarCircle').textContent=ini;
+    document.getElementById('menuNameSide').textContent=currentUser.displayName||'';
+    document.getElementById('menuSinceSide').textContent='Member since '+MONTHS[keyToDate(signupDate).getMonth()]+' '+keyToDate(signupDate).getFullYear();
+    document.getElementById('menuEmail').textContent=currentUser.email||'';
+    buildStrip(); buildPrayers(todayKey); buildFasting(todayKey);
+    updateBottom(todayKey); updateStreak(); updateYearlyStats(); updateFireAnim(); updateAvatarRing();
+  }
+
+  function buildStrip(){
+    const el=document.getElementById('strip'); el.innerHTML='';
+    for(let i=-3;i<=3;i++){
+      const d=new Date(today); d.setDate(today.getDate()+i);
+      const k=fmtKey(d), isT=i===0, isFut=i>0;
+      const cnt=prayerCount(k), fasted=!isFut&&(dayData[k]?.fasting||false);
+      const wrap=document.createElement('div'); wrap.className='strip-day';
+      if(!isFut) wrap.onclick=()=>openSheet(k);
+      const letter=document.createElement('span'); letter.className='strip-letter'; letter.textContent=DLET[d.getDay()];
+      const cw=document.createElement('div'); cw.className='strip-circle-wrap';
+      const ring=document.createElement('div'); ring.className='strip-ring'+(fasted?' fasted':'');
+      const num=document.createElement('div');
+      num.className='strip-num'+(isFut?' future':cnt===5?' done':cnt>0?' partial':'')+(isT?' today':'');
+      num.textContent=d.getDate();
+      cw.appendChild(ring); cw.appendChild(num);
+      wrap.appendChild(letter); wrap.appendChild(cw); el.appendChild(wrap);
+    }
+  }
+
+  function checkIcon(s,maxSt){
+    const c=s===0?'var(--green-mid)':(s===2||(s===1&&maxSt===1))?'white':'#EF9F27';
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
+
+  function buildPrayers(dateKey){
+    const list=document.getElementById('prayersList'); list.innerHTML='';
+    const data=dayData[dateKey]||{}, friday=isFriday(dateKey), useJuma=friday&&!data.useDhuhrOnFriday;
+    let prayers=[...PRAYERS];
+    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:true,isJuma:true}:p);
+    prayers.forEach(p=>{
+      const state=data[p.id]||0, maxStates=p.hasSunnah?2:1;
+      const stateLabels=['','Fard prayed','Fard + Sunnah'];
+      const card=document.createElement('div'); card.className='prayer-card'; card.dataset.state=state; card.dataset.max=maxStates;
+      card.innerHTML=`<div class="prayer-info">
+        <div class="prayer-name">${p.name}</div>
+        <div class="prayer-meta">${p.arabic}</div>
+        <div class="prayer-state">${state===0?'':(maxStates===1&&state===1?'Prayed ✓':stateLabels[state])}</div>
+        ${p.isJuma&&dateKey===todayKey?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
+      </div>
+      <button class="chk" data-state="${state}" data-max="${maxStates}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state,maxStates)}</button>`;
+      list.appendChild(card);
+    });
+    document.getElementById('allDoneMsg').style.display=allPrayersDone(dateKey)?'block':'none';
+    list.style.cssText='display:flex;flex-direction:column;gap:8px;';
+  }
+
+  window.cycleState=async(e,dateKey,prayerId,maxStates)=>{
+    e.stopPropagation();
+    if(!dayData[dateKey]) dayData[dateKey]={};
+    const cur=dayData[dateKey][prayerId]||0;
+    dayData[dateKey][prayerId]=cur>=maxStates?0:cur+1;
+    await saveDayData(dateKey);
+    if(dateKey===todayKey){ buildPrayers(dateKey); updateBottom(dateKey); updateFireAnim(); }
+    else buildSheetPrayers(dateKey);
+    updateStreak(); buildStrip(); updateYearlyStats();
+  };
+
+  window.switchFridayDhuhr=async(e,dateKey)=>{
+    e.stopPropagation();
+    if(!dayData[dateKey]) dayData[dateKey]={};
+    dayData[dateKey].useDhuhrOnFriday=!dayData[dateKey].useDhuhrOnFriday;
+    dayData[dateKey].juma=0; dayData[dateKey].dhuhr=0;
+    await saveDayData(dateKey);
+    if(dateKey===todayKey) buildPrayers(dateKey); else buildSheetPrayers(dateKey);
+  };
+
+  function buildFasting(dateKey){
+    const on=dayData[dateKey]?.fasting||false;
+    document.getElementById('fastingCard').className=on?'fasting-on':'';
+    document.getElementById('fastingLabel').textContent=on?'Fasting today 🤍':'Not fasting today';
+    document.getElementById('fastingSub').textContent=on?'Tap to undo':"Tap to mark today's fast";
+    document.getElementById('fastingChk').innerHTML=on
+      ?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
+      :`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
+
+  window.toggleFasting=async()=>{
+    if(!dayData[todayKey]) dayData[todayKey]={};
+    dayData[todayKey].fasting=!dayData[todayKey].fasting;
+    await saveDayData(todayKey);
+    buildFasting(todayKey); buildStrip(); updateStreak(); updateYearlyStats();
+  };
+
+  function updateBottom(dateKey){
+    const rem=5-prayerCount(dateKey);
+    document.getElementById('bottomLbl').textContent=rem===0?'All prayers completed — Alhamdulillah':`${rem} prayer${rem!==1?'s':''} remaining today`;
+  }
+
+  async function updateStreak(){
+    let streak=0, missedInARow=0;
+    const d=new Date(today);
+    for(let i=0;i<365;i++){
+      const k=fmtKey(d);
+      if(k<signupDate) break;
+      if(k>todayKey){ d.setDate(d.getDate()-1); continue; }
+      if(prayerCount(k)>0){ streak++; missedInARow=0; }
+      else{ missedInARow++; if(missedInARow>=2) break; }
+      d.setDate(d.getDate()-1);
+    }
+    document.getElementById('streakNum').textContent=streak;
+    document.getElementById('streakSub').textContent=streak===0?'Start today!':streak===1?'Great start!':`${streak} days strong — keep going!`;
+
+    function hijriMonth(date){
+      const jd=Math.floor((date.getTime()/86400000)+2440587.5);
+      let l=jd-1948440+10632; const n=Math.floor((l-1)/10631); l=l-10631*n+354;
+      const j=Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)+Math.floor(l/5670)*Math.floor((43*l)/15238);
+      l=l-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
+      return (30*n+j-30)+'-'+Math.floor((24*l)/709);
+    }
+    const curHM=hijriMonth(today), hStart=new Date(today);
+    for(let i=0;i<31;i++){ const prev=new Date(hStart); prev.setDate(prev.getDate()-1); if(hijriMonth(prev)!==curHM) break; hStart.setDate(hStart.getDate()-1); }
+    const hmStartKey=fmtKey(hStart);
+    const sY=hStart.getFullYear(), eY=today.getFullYear();
+    for(let y=sY;y<=eY;y++){
+      const mF=y===sY?hStart.getMonth():0, mT=y===eY?today.getMonth():11;
+      for(let m=mF;m<=mT;m++) await loadMonthData(y,m);
+    }
+    let fastStreak=0; const fd=new Date(today);
+    for(let i=0;i<31;i++){
+      const k=fmtKey(fd);
+      if(k<hmStartKey||k<signupDate) break;
+      if(k>todayKey){ fd.setDate(fd.getDate()-1); continue; }
+      if(dayData[k]?.fasting) fastStreak++;
+      fd.setDate(fd.getDate()-1);
+    }
+    document.getElementById('fastStreakNum').textContent=fastStreak;
+    document.getElementById('fastStreakSub').textContent=fastStreak===0?'This Hijri month':fastStreak===1?'1 day so far':`${fastStreak} days this month`;
+  }
+
+  async function updateYearlyStats(){
+    const year=today.getFullYear(), startYear=parseInt(signupDate.slice(0,4));
+    for(let y=startYear;y<=year;y++){
+      const mF=y===startYear?parseInt(signupDate.slice(5,7))-1:0, mT=y===year?today.getMonth():11;
+      for(let m=mF;m<=mT;m++) await loadMonthData(y,m);
+    }
+    let pD=0,fD=0,vD=0;
+    const VOLIDS=['ishraq','duha','witr','tahajjud'];
+    for(const[k,v] of Object.entries(dayData)){
+      if(k<signupDate||k>todayKey) continue;
+      if(allPrayersDone(k)) pD++;
+      if(v.fasting) fD++;
+      if(VOLIDS.some(id=>v[id])) vD++;
+    }
+    document.getElementById('menuStatPrayer').textContent=pD;
+    document.getElementById('menuStatFast').textContent=fD;
+    document.getElementById('menuStatVol').textContent=vD;
+    const memCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    document.getElementById('menuStatHifz').textContent=memCount+' / 114';
+  }
+
+  function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
+  function lanternSVG(){ return `<svg width="44" height="58" viewBox="0 0 46 62" fill="none"><line x1="23" y1="1" x2="23" y2="8" stroke="#854F0B" stroke-width="2" stroke-linecap="round"/><rect x="13" y="8" width="20" height="6" rx="3" fill="#854F0B"/><rect x="9" y="14" width="28" height="34" rx="5" fill="#FAEEDA"/><line x1="9" y1="14" x2="9" y2="48" stroke="#854F0B" stroke-width="2"/><line x1="37" y1="14" x2="37" y2="48" stroke="#854F0B" stroke-width="2"/><path d="M23 26 C23 26 19 31 19 35 C19 38 20.8 41 23 41 C25.2 41 27 38 27 35 C27 31 23 26 23 26 Z" fill="#EF9F27"/><path d="M23 33 C23 33 21 35 21 37 C21 38.2 21.9 39 23 39 C24.1 39 25 38.2 25 37 C25 35 23 33 23 33 Z" fill="#FAC775"/><rect x="13" y="48" width="20" height="6" rx="3" fill="#854F0B"/><path d="M9 14 L5 20 L5 42 L9 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M37 14 L41 20 L41 42 L37 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`; }
+  function updateFireAnim(){
+    const cnt=prayerCount(todayKey);
+    const s=[()=>flameSVG(16,22,'#2C2C2A','#444441'),()=>flameSVG(20,28,'#BA7517','#FAC775'),()=>flameSVG(24,34,'#993C1D','#EF9F27'),()=>flameSVG(30,42,'#BA7517','#FAC775'),()=>flameSVG(36,50,'#854F0B','#EF9F27'),()=>lanternSVG()];
+    document.getElementById('fireWrap').innerHTML=s[Math.min(cnt,5)]();
+  }
+
+  function updateAvatarRing(){
+    const mem=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    const circ=2*Math.PI*16, offset=circ*(1-mem/114);
+    const ring=document.getElementById('avatarRing');
+    if(ring){ ring.style.strokeDasharray=circ; ring.style.strokeDashoffset=offset; }
+  }
+
+  // ── DAY SHEET ──
+  window.openSheet=async(dateKey)=>{
+    if(dateKey>todayKey||dateKey<signupDate) return;
+    sheetDateKey=dateKey; await loadDayData(dateKey);
+    const d=keyToDate(dateKey), isToday=dateKey===todayKey;
+    document.getElementById('sheetDate').textContent=isToday?`Today — ${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`:`${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    document.getElementById('sheetSub').textContent=toHijri(d);
+    buildSheetPrayers(dateKey); buildSheetVoluntary(dateKey); buildSheetFasting(dateKey);
+    document.getElementById('sheetOverlay').classList.add('open');
+  };
+
+  (function(){
+    let sX=0,sY=0;
+    document.getElementById('sheet').addEventListener('touchstart',e=>{ sX=e.touches[0].clientX; sY=e.touches[0].clientY; },{passive:true});
+    document.getElementById('sheet').addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-sX,dy=e.changedTouches[0].clientY-sY; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) navigateSheet(dx<0?1:-1); },{passive:true});
+  })();
+
+  window.navigateSheet=async(dir)=>{
+    const cur=new Date(sheetDateKey+'T12:00:00'); cur.setDate(cur.getDate()+dir);
+    const nk=fmtKey(cur); if(nk>todayKey||nk<signupDate) return; await openSheet(nk);
+  };
+  window.closeSheet=(e)=>{
+    if(e.target===document.getElementById('sheetOverlay')){
+      document.getElementById('sheetOverlay').classList.remove('open');
+      if(sheetDateKey===todayKey){ buildPrayers(todayKey); buildFasting(todayKey); updateBottom(todayKey); updateFireAnim(); }
+      updateStreak(); buildStrip(); updateYearlyStats();
+    }
+  };
+
+  function buildSheetPrayers(dateKey){
+    const el=document.getElementById('sheetPrayers'); el.innerHTML='';
+    const data=dayData[dateKey]||{}, friday=isFriday(dateKey), useJuma=friday&&!data.useDhuhrOnFriday;
+    let prayers=[...PRAYERS];
+    if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:true,isJuma:true}:p);
+    prayers.forEach(p=>{
+      const state=data[p.id]||0, maxStates=p.hasSunnah?2:1;
+      const sl=['Not prayed','Fard prayed ✓','Fard + Sunnah ✦'], cls=['s0','s1','s2'];
+      const row=document.createElement('div'); row.className='sheet-prayer-row';
+      row.innerHTML=`<div><div class="sheet-prayer-name">${p.name}</div><div class="sheet-prayer-arabic">${p.arabic}</div>
+        <div class="sheet-state-label ${cls[state]}">${maxStates===1&&state===1?'Prayed ✓':sl[state]}</div>
+        ${p.isJuma?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
+      </div>
+      <button class="chk" data-state="${state}" data-max="${maxStates}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})" style="flex-shrink:0;">${checkIcon(state,maxStates)}</button>`;
+      el.appendChild(row);
+    });
+  }
+
+  function buildSheetVoluntary(dateKey){
+    const el=document.getElementById('sheetVoluntary'); el.innerHTML='';
+    const data=dayData[dateKey]||{};
+    VOLUNTARY.forEach(v=>{
+      const on=data[v.id]||false;
+      const row=document.createElement('div'); row.className='sheet-prayer-row';
+      row.innerHTML=`<div><div class="sheet-prayer-name">${v.name}</div><div class="sheet-prayer-arabic">${v.arabic}</div></div>
+        <button class="vol-toggle ${on?'on':''}" onclick="toggleVol(event,'${dateKey}','${v.id}')"></button>`;
+      el.appendChild(row);
+    });
+  }
+
+  window.toggleVol=async(e,dateKey,volId)=>{
+    e.stopPropagation(); if(!dayData[dateKey]) dayData[dateKey]={};
+    dayData[dateKey][volId]=!dayData[dateKey][volId];
+    await saveDayData(dateKey); buildSheetVoluntary(dateKey);
+  };
+
+  function buildSheetFasting(dateKey){
+    const el=document.getElementById('sheetFasting'); el.innerHTML='';
+    const on=dayData[dateKey]?.fasting||false;
+    const row=document.createElement('div'); row.className='sheet-prayer-row';
+    row.innerHTML=`<div><div class="sheet-prayer-name">Fasting</div>
+      <div class="sheet-prayer-arabic" style="color:${on?'#B05070':'var(--text2)'};">${on?'Fasted this day 🌙':'Did not fast'}</div></div>
+      <button class="vol-toggle ${on?'on':''}" style="${on?'background:linear-gradient(135deg,#3D2060,#B05070);':''}" onclick="toggleSheetFasting(event,'${dateKey}')"></button>`;
+    el.appendChild(row);
+  }
+
+  window.toggleSheetFasting=async(e,dateKey)=>{
+    e.stopPropagation(); if(!dayData[dateKey]) dayData[dateKey]={};
+    dayData[dateKey].fasting=!dayData[dateKey].fasting;
+    await saveDayData(dateKey); buildSheetFasting(dateKey);
+    if(dateKey===todayKey) buildFasting(todayKey);
+    buildStrip(); updateStreak(); updateYearlyStats();
+  };
+
+  // ── CALENDAR ──
+  window.openCal=()=>{ calYear=today.getFullYear(); calMonth=today.getMonth(); loadMonthData(calYear,calMonth).then(buildCal); document.getElementById('calModal').classList.add('open'); };
+  window.closeCal=()=>document.getElementById('calModal').classList.remove('open');
+  window.handleCalBg=(e)=>{ if(e.target===document.getElementById('calModal')) closeCal(); };
+  window.changeCalMonth=async(dir)=>{
+    calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;}
+    await loadMonthData(calYear,calMonth); buildCal();
+  };
+
+  function buildCal(){
+    const pad=n=>String(n).padStart(2,'0');
+    document.getElementById('calTitle').textContent=`${MONTHS[calMonth]} ${calYear}`;
+    const headEl=document.getElementById('calHead'), gridEl=document.getElementById('calGrid');
+    headEl.innerHTML=''; gridEl.innerHTML='';
+    const sdDate=keyToDate(signupDate);
+    document.getElementById('calPrev').disabled=calYear<sdDate.getFullYear()||(calYear===sdDate.getFullYear()&&calMonth<=sdDate.getMonth());
+    document.getElementById('calNext').disabled=calYear>today.getFullYear()||(calYear===today.getFullYear()&&calMonth>=today.getMonth());
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d=>{ const el=document.createElement('div'); el.className='cal-day-name'; el.textContent=d; headEl.appendChild(el); });
+    const dim=new Date(calYear,calMonth+1,0).getDate(), fd=new Date(calYear,calMonth,1).getDay();
+    for(let i=0;i<fd;i++) gridEl.appendChild(document.createElement('div'));
+    for(let day=1;day<=dim;day++){
+      const dateKey=`${calYear}-${pad(calMonth+1)}-${pad(day)}`;
+      const isToday=dateKey===todayKey, isFuture=dateKey>todayKey, bSup=dateKey<signupDate;
+      const cnt=prayerCount(dateKey), fasted=dayData[dateKey]?.fasting||false;
+      const wrap=document.createElement('div'); wrap.className='cal-cell-wrap';
+      const cell=document.createElement('div');
+      let cls='cal-cell';
+      if(bSup) cls+=' before-signup'; else if(isFuture) cls+=' future'; else if(cnt===5) cls+=' completed'; else if(cnt>0) cls+=' partial';
+      if(isToday) cls+=' today';
+      cell.className=cls; cell.textContent=day;
+      if(fasted&&!isFuture&&!bSup){ const ring=document.createElement('div'); ring.className='fast-ring-cal'; wrap.appendChild(ring); }
+      if(!isFuture&&!bSup) cell.onclick=()=>{ closeCal(); openSheet(dateKey); };
+      wrap.appendChild(cell); gridEl.appendChild(wrap);
+    }
+  }
+
+  // ── HIFZ ──
+  // hifzData[num] = { s: 0|1|2, memorizedOn, reviews: [{date,interval}], nextDue, postponedTo }
+  // s: 0=not started, 1=learning, 2=memorized
+
+  function getHS(v){ return typeof v==='object'?v.s:(v||0); }
+  function getHifzState(num){ return getHS(hifzData[num]); }
+  function getHifzField(num,field){ const v=hifzData[num]; return typeof v==='object'?v[field]:null; }
+
+  function calcNextDue(reviews){
+    if(!reviews||!reviews.length) return addDays(todayKey,1);
+    const count=reviews.length;
+    const intervalIdx=Math.min(count-1, SR_INTERVALS.length-1);
+    const interval=SR_INTERVALS[intervalIdx];
+    const lastReview=reviews[reviews.length-1].date;
+    return addDays(lastReview, interval);
+  }
+
+  async function loadHifzData(){
+    try{
+      const snap=await getDoc(doc(db,'users',currentUser.uid));
+      if(snap.exists()&&snap.data().hifz) hifzData=snap.data().hifz;
+    }catch(e){}
+  }
+  async function saveHifzData(){
+    try{ await setDoc(doc(db,'users',currentUser.uid),{hifz:hifzData},{merge:true}); }catch(e){}
+    const memCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+    const el=document.getElementById('menuStatHifz'); if(el) el.textContent=memCount+' / 114';
+  }
+
+  window.openHifz=async()=>{
+    await loadHifzData(); buildHifzSheet();
+    document.getElementById('hifzSheet').classList.add('open');
+  };
+  window.closeHifz=(e)=>{ if(e.target===document.getElementById('hifzSheet')) document.getElementById('hifzSheet').classList.remove('open'); };
+
+  function buildHifzSheet(){
+    buildHifzProgress();
+    buildHifzDueSection();
+    buildHifzList();
+    updateAvatarRing();
+  }
+
+  function buildHifzProgress(){
+    const memorized=SURAHS.filter(s=>getHifzState(s[0])===2).length;
+    const pct=Math.round((memorized/114)*100);
+    document.getElementById('hifzCount').textContent=`${memorized} / 114 surahs`;
+    document.getElementById('hifzBar').style.width=pct+'%';
+  }
+
+  function buildHifzDueSection(){
+    const el=document.getElementById('hifzDueSection'); el.innerHTML='';
+    const dueSurahs=[];
+    SURAHS.forEach(s=>{
+      const num=s[0], state=getHifzState(num);
+      if(state===0) return;
+      const reviews=getHifzField(num,'reviews')||[];
+      if(!reviews.length) return;
+      const postponedTo=getHifzField(num,'postponedTo');
+      let nextDue=getHifzField(num,'nextDue')||calcNextDue(reviews);
+      if(postponedTo&&postponedTo>todayKey) nextDue=postponedTo;
+      const daysUntilDue=daysDiff(todayKey,nextDue);
+      const daysOverdue=daysUntilDue<0?Math.abs(daysUntilDue):0;
+      const isDueToday=nextDue===todayKey;
+      const isOverdue=nextDue<todayKey;
+      if(isOverdue||isDueToday) dueSurahs.push({num,name:s[1],daysOverdue,isDueToday});
+    });
+
+    // Build review log data for the right card
+    const byJuz={};
+    SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s[0]); });
+    const last7=Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()-i); return fmtKey(d); });
+    const recentEntries=[];
+    last7.forEach(date=>{
+      const reviewed=SURAHS.filter(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+      if(!reviewed.length) return;
+      const shownJuz=new Set(), lines=[];
+      reviewed.forEach(s=>{
+        const juz=s[4]; if(shownJuz.has(juz)) return;
+        const juzNums=byJuz[juz];
+        const allRev=juzNums.every(n=>{ const r=getHifzField(n,'reviews')||[]; return r.some(rv=>rv.date===date); });
+        if(allRev){ shownJuz.add(juz); lines.push({text:'Juz '+juz+' — complete',juz:true}); }
+        else lines.push({text:s[1],juz:false});
+      });
+      const label=date===todayKey?'Today':date===last7[1]?'Yesterday':keyToDate(date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      recentEntries.push({label,lines:lines.slice(0,4),more:Math.max(0,lines.length-4)});
+    });
+
+    const hasAnything=dueSurahs.length>0||recentEntries.length>0;
+    if(!hasAnything) return;
+
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 24px 4px;';
+
+    // LEFT — Due today card
+    const leftCard=document.createElement('div');
+    leftCard.style.cssText='background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);padding:12px;';
+
+    if(dueSurahs.length===0){
+      leftCard.innerHTML=`
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Due today</div>
+        <div style="text-align:center;padding:12px 4px;">
+          <div style="font-size:18px;margin-bottom:6px;">✦</div>
+          <div style="font-size:12px;font-weight:500;color:var(--green);">All caught up!</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;">Masha'Allah — keep it consistent.</div>
+        </div>`;
+    } else {
+      dueSurahs.sort((a,b)=>b.daysOverdue-a.daysOverdue);
+      const overdueCnt=dueSurahs.filter(s=>s.daysOverdue>0).length;
+      const todayCnt=dueSurahs.filter(s=>s.isDueToday).length;
+      let titleHtml=`<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">Due today`;
+      if(overdueCnt) titleHtml+=`<span style="font-size:10px;padding:2px 6px;border-radius:20px;background:#FDECEA;color:#C0392B;">${overdueCnt}↑</span>`;
+      titleHtml+='</div>';
+      leftCard.innerHTML=titleHtml;
+      dueSurahs.slice(0,5).forEach(s=>{
+        const reviewedToday=isReviewedToday(s.num);
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);';
+        row.innerHTML=`<div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:10px;color:${s.daysOverdue>0?'#C0392B':'#4A90D9'};">${s.daysOverdue>0?s.daysOverdue+'d overdue':'Due today'}</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-left:6px;">
+          <button onclick="openPostpone(${s.num},'${s.name}')" style="font-size:10px;color:var(--text2);background:var(--bg);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;cursor:pointer;font-family:inherit;">…</button>
+          <button onclick="logReview(${s.num})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${reviewedToday?'#4A90D9':'var(--border2)'};background:${reviewedToday?'#4A90D9':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;">
+            ${reviewedToday?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'↻'}
+          </button>
+        </div>`;
+        row.querySelector('div').style.borderBottom='none';
+        leftCard.appendChild(row);
+      });
+      if(dueSurahs.length>5){
+        const more=document.createElement('div');
+        more.style.cssText='font-size:10px;color:var(--text2);text-align:center;padding-top:6px;';
+        more.textContent=`+${dueSurahs.length-5} more`;
+        leftCard.appendChild(more);
+      }
+    }
+
+    // RIGHT — Recent reviews card
+    const rightCard=document.createElement('div');
+    rightCard.style.cssText='background:var(--card);border:0.5px solid var(--border);border-radius:var(--r);padding:12px;';
+    rightCard.innerHTML=`<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Recent reviews</div>`;
+
+    if(recentEntries.length===0){
+      rightCard.innerHTML+=`<div style="text-align:center;padding:12px 4px;font-size:11px;color:var(--text2);">No reviews yet this week.</div>`;
+    } else {
+      recentEntries.slice(0,3).forEach(entry=>{
+        const block=document.createElement('div');
+        block.style.cssText='padding:5px 0;border-bottom:0.5px solid var(--border);';
+        block.innerHTML=`<div style="font-size:10px;color:var(--text2);margin-bottom:3px;">${entry.label}</div>`;
+        entry.lines.forEach(l=>{
+          const d=document.createElement('div');
+          d.style.cssText=`font-size:12px;${l.juz?'color:#0F6E56;font-weight:500;':'color:var(--text);'}`;
+          d.textContent=l.juz?'✓ '+l.text:l.text;
+          block.appendChild(d);
+        });
+        if(entry.more){ const m=document.createElement('div'); m.style.cssText='font-size:10px;color:var(--text2);'; m.textContent='+'+entry.more+' more'; block.appendChild(m); }
+        rightCard.appendChild(block);
+      });
+    }
+
+    wrap.appendChild(leftCard);
+    wrap.appendChild(rightCard);
+    el.appendChild(wrap);
+  }
+
+  function isReviewedToday(num){
+    const reviews=getHifzField(num,'reviews')||[];
+    return reviews.length>0&&reviews[reviews.length-1].date===todayKey;
+  }
+
+  function buildHifzList(){
+    const el=document.getElementById('hifzList'); el.innerHTML='';
+    const byJuz={};
+    SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s); });
+
+    for(let juz=1;juz<=30;juz++){
+      if(!byJuz[juz]) continue;
+      const surahs=byJuz[juz];
+      const memInJuz=surahs.filter(s=>getHifzState(s[0])===2).length;
+      const section=document.createElement('div'); section.className='juz-section';
+      section.innerHTML=`<div class="juz-title">Juz ${juz}<span class="juz-count">${memInJuz}/${surahs.length} memorized</span></div>`;
+
+      surahs.forEach(s=>{
+        const [num,nameEn,nameAr,ayahs]=s;
+        const state=getHifzState(num);
+        const memorizedOn=getHifzField(num,'memorizedOn');
+        const reviews=getHifzField(num,'reviews')||[];
+        const lastReviewed=reviews.length?reviews[reviews.length-1].date:null;
+        const reviewedToday=reviews.length&&reviews[reviews.length-1].date===todayKey;
+        const nextDue=state>0&&reviews.length?(getHifzField(num,'nextDue')||calcNextDue(reviews)):null;
+        const postponedTo=getHifzField(num,'postponedTo');
+        const effectiveDue=postponedTo&&postponedTo>todayKey?postponedTo:nextDue;
+        const daysUntil=effectiveDue?daysDiff(todayKey,effectiveDue):null;
+
+        let rowClass='surah-row';
+        if(state===1) rowClass+=' learning';
+        if(state===2) rowClass+=' memorized';
+
+        let dueHtml='';
+        if(effectiveDue&&state>0&&reviews.length){
+          if(daysUntil<0) dueHtml=`<div class="surah-due overdue">⚠ ${Math.abs(daysUntil)}d overdue</div>`;
+          else if(daysUntil===0) dueHtml=`<div class="surah-due soon">Due today</div>`;
+          else if(daysUntil<=3) dueHtml=`<div class="surah-due soon">Due in ${daysUntil} day${daysUntil!==1?'s':''}</div>`;
+          else dueHtml=`<div class="surah-due ok">Next review in ${daysUntil}d</div>`;
+        }
+
+        const stateLabels=['Not started','Learning','Memorized'];
+        const row=document.createElement('div'); row.className=rowClass;
+        row.onclick=()=>tapSurahRow(num, nameEn, state);
+        row.innerHTML=`
+          <span class="surah-num">${num}</span>
+          <div class="surah-info">
+            <div class="surah-name">${nameEn}</div>
+            <div class="surah-arabic">${nameAr}</div>
+            <div class="surah-meta">${ayahs} ayahs · ${stateLabels[state]}</div>
+            ${memorizedOn?`<div class="surah-date-memorized">✦ Memorized ${memorizedOn}</div>`:''}
+            ${lastReviewed?`<div class="surah-date-reviewed">${reviewedToday?'✓ Reviewed today':'🔄 Last reviewed '+lastReviewed}</div>`:''}
+            ${dueHtml}
+          </div>
+          ${state>0?`<button class="surah-review-btn ${reviewedToday?'reviewed':''}" onclick="event.stopPropagation();logReview(${num})" title="Log review">
+            ${reviewedToday?`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`:'🔄'}
+          </button>`:''}`;
+        section.appendChild(row);
+      });
+      el.appendChild(section);
+    }
+  }
+
+  function buildHifzReviewLog(){
+    const el=document.getElementById('hifzReviewLog'); el.innerHTML='';
+    const byJuz={};
+    SURAHS.forEach(s=>{ const juz=s[4]; if(!byJuz[juz]) byJuz[juz]=[]; byJuz[juz].push(s[0]); });
+
+    const last7=Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()-i); return fmtKey(d); });
+    const hasAny=last7.some(date=>{
+      return SURAHS.some(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+    });
+    if(!hasAny) return;
+
+    const sec=document.createElement('div'); sec.className='review-log-section';
+    sec.innerHTML='<div class="review-log-title">📋 Recent Reviews</div>';
+
+    last7.forEach(date=>{
+      const reviewed=SURAHS.filter(s=>{ const r=getHifzField(s[0],'reviews')||[]; return r.some(rv=>rv.date===date); });
+      if(!reviewed.length) return;
+
+      const block=document.createElement('div'); block.className='review-day-block';
+      const label=date===todayKey?'Today':date===last7[1]?'Yesterday':keyToDate(date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      block.innerHTML=`<div class="review-day-label">${label} — ${reviewed.length} surah${reviewed.length!==1?'s':''}</div>`;
+      const items=document.createElement('div'); items.className='review-day-items';
+
+      // Check if any full Juz was reviewed
+      const reviewedNums=new Set(reviewed.map(s=>s[0]));
+      const shownJuz=new Set();
+      reviewed.forEach(s=>{
+        const juz=s[4];
+        if(shownJuz.has(juz)) return;
+        const juzSurahs=byJuz[juz];
+        const allReviewed=juzSurahs.every(n=>{ const r=getHifzField(n,'reviews')||[]; return r.some(rv=>rv.date===date); });
+        if(allReviewed){ shownJuz.add(juz); const i=document.createElement('div'); i.className='review-day-item juz-complete'; i.textContent=`✓ Juz ${juz} — complete`; items.appendChild(i); }
+        else if(!shownJuz.has(juz)){ const i=document.createElement('div'); i.className='review-day-item'; i.textContent=s[1]; items.appendChild(i); }
+      });
+
+      block.appendChild(items); sec.appendChild(block);
+    });
+    el.appendChild(sec);
+  }
+
+  window.tapSurahRow=async(num, name, currentState)=>{
+    if(currentState===2){
+      // Already memorized — show confirm before resetting
+      showConfirm(`Reset "${name}" to Not started? The memorization date will be cleared but your review history is kept.`, async()=>{
+        const existing=hifzData[num]||{};
+        hifzData[num]={ ...existing, s:0, memorizedOn:null };
+        await saveHifzData(); buildHifzSheet();
+      });
+    } else {
+      const next=currentState+1; // 0→1 or 1→2
+      const existing=typeof hifzData[num]==='object'?hifzData[num]:{};
+      hifzData[num]={ ...existing, s:next, memorizedOn:next===2?todayKey:(existing.memorizedOn||null) };
+      await saveHifzData(); buildHifzSheet();
+    }
+  };
+
+  window.logReview=async(num)=>{
+    if(isReviewedToday(num)) return; // already reviewed today
+    const existing=typeof hifzData[num]==='object'?hifzData[num]:{s:1};
+    const reviews=[...(existing.reviews||[]),{date:todayKey,interval:SR_INTERVALS[Math.min((existing.reviews||[]).length,SR_INTERVALS.length-1)]}];
+    const nextDue=calcNextDue(reviews);
+    hifzData[num]={ ...existing, reviews, nextDue, postponedTo:null };
+    await saveHifzData(); buildHifzSheet();
+  };
+
+  // Postpone
+  window.openPostpone=(num,name)=>{
+    postponeTarget=num;
+    document.getElementById('postponeSurahName').textContent=name;
+    document.getElementById('postponePopup').classList.add('open');
+  };
+  window.closePostpone=()=>{ document.getElementById('postponePopup').classList.remove('open'); postponeTarget=null; };
+  window.confirmPostpone=async(days)=>{
+    if(postponeTarget===null) return;
+    const existing=typeof hifzData[postponeTarget]==='object'?hifzData[postponeTarget]:{s:1};
+    hifzData[postponeTarget]={ ...existing, postponedTo:addDays(todayKey,days) };
+    await saveHifzData(); closePostpone(); buildHifzSheet();
+  };
+
+  // Confirm
+  function showConfirm(text, onYes){
+    document.getElementById('confirmText').textContent=text;
+    document.getElementById('confirmPopup').classList.add('open');
+    confirmCallback=onYes;
+  }
+  window.closeConfirm=()=>{ document.getElementById('confirmPopup').classList.remove('open'); confirmCallback=null; };
+  document.getElementById('confirmYesBtn').onclick=async()=>{ if(confirmCallback) await confirmCallback(); closeConfirm(); };
+
+  // ── MENU ──
+  window.openMenu=()=>{
+    document.getElementById('menuOverlay').style.display='block';
+    const m=document.getElementById('sideMenu'); m.style.display='block';
+    setTimeout(()=>m.style.transform='translateX(0)',10);
+  };
+  window.closeMenu=()=>{
+    const m=document.getElementById('sideMenu'); m.style.transform='translateX(-100%)';
+    setTimeout(()=>{ m.style.display='none'; document.getElementById('menuOverlay').style.display='none'; },350);
+  };
+  window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
+  document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
+</script>
+</body>
+</html>
