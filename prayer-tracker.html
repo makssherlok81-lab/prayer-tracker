@@ -24,7 +24,7 @@
     .google-btn:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
     #mainApp { display: none; width: 100%; max-width: 680px; }
     #hdr { background: var(--green); border-radius: var(--rl) var(--rl) 0 0; padding: 28px 36px 22px; user-select: none; }
-    .hdr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .hdr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .burger-btn { background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:0;margin-right:10px;line-height:1;flex-shrink:0; }
     .burger-btn:hover { color:white; }
     .hdr-right { display: flex; align-items: center; gap: 12px; }
@@ -252,12 +252,12 @@
     <div class="hdr-top">
       <button class="burger-btn" onclick="openMenu()">&#9776;</button>
       <div class="hdr-right">
-        <div class="avatar-wrap" onclick="toggleUserMenu()">
+        <div class="avatar-wrap">
           <svg class="avatar-ring-svg" viewBox="0 0 36 36">
             <circle class="avatar-ring-bg" cx="18" cy="18" r="16"/>
             <circle class="avatar-ring-fill" id="avatarRing" cx="18" cy="18" r="16" stroke-dasharray="100.53" stroke-dashoffset="100.53"/>
           </svg>
-          <button class="avatar-btn" id="avatarBtn">?</button>
+          <button class="avatar-btn" id="avatarBtn" onclick="event.stopPropagation();toggleUserMenu()">?</button>
         </div>
       </div>
     </div>
@@ -369,7 +369,7 @@
     <div style="font-size:12px;color:var(--text2);margin-top:3px;" id="menuSinceSide"></div>
   </div>
 
-  <div style="padding:0 24px 8px;">
+  <div style="padding:20px 24px 8px;">
     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">📅 Calendar</div>
     <button onclick="closeMenu();openCal();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View full calendar →</button>
   </div>
