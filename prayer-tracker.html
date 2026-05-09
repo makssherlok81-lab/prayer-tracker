@@ -229,6 +229,12 @@
     .review-day-item { font-size:12px; color:var(--text2); padding:4px 10px; background:var(--bg); border-radius:6px; }
     .review-day-item.juz-complete { color:var(--green); font-weight:500; }
 
+
+    #friendsSheet { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:flex-end; justify-content:center; }
+    #friendsSheet.open { display:flex; }
+    #friendsInner { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:680px; max-height:85vh; overflow-y:auto; transform:translateY(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); padding:0 0 40px; }
+    #friendsSheet.open #friendsInner { transform:translateY(0); }
+
     /* FRIENDS */
     .friend-card { background:var(--bg); border-radius:var(--r); padding:14px; margin-bottom:8px; }
     .friend-card-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
@@ -418,9 +424,7 @@
   <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
   <div style="padding:0 24px 8px;">
     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">👥 Friends</div>
-    <div id="friendsSection">
-      <div style="font-size:12px;color:var(--text2);text-align:center;padding:8px;">Loading…</div>
-    </div>
+    <button onclick="closeMenu();openFriends();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View friends →</button>
   </div>
 
 </div>
@@ -1435,6 +1439,15 @@
     }catch(e){}
   }
 
+  window.openFriends=async()=>{
+    document.getElementById('friendsSheet').classList.add('open');
+    await buildFriendsSection();
+  };
+  window.closeFriendsSheet=(e)=>{
+    if(e.target===document.getElementById('friendsSheet'))
+      document.getElementById('friendsSheet').classList.remove('open');
+  };
+
   async function buildFriendsSection(){
     const el=document.getElementById('friendsSection');
     if(!el) return;
@@ -1517,7 +1530,6 @@
     document.getElementById('menuOverlay').style.display='block';
     const m=document.getElementById('sideMenu'); m.style.display='block';
     setTimeout(()=>m.style.transform='translateX(0)',10);
-    buildFriendsSection();
   };
   window.closeMenu=()=>{
     const m=document.getElementById('sideMenu'); m.style.transform='translateX(-100%)';
@@ -1526,6 +1538,20 @@
   window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
   document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
 </script>
+
+
+<!-- FRIENDS SHEET -->
+<div id="friendsSheet" onclick="closeFriendsSheet(event)">
+  <div id="friendsInner">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 16px;border-bottom:0.5px solid var(--border);">
+      <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:2px;">👥 Friends</div>
+    </div>
+    <div style="padding:16px 24px;" id="friendsSection">
+      <div style="font-size:12px;color:var(--text2);text-align:center;padding:16px;">Loading…</div>
+    </div>
+  </div>
+</div>
 
 <!-- CONNECT FRIEND POPUP -->
 <div id="connectPopup">
