@@ -1391,8 +1391,11 @@
     if(!pendingConnect) return;
     try{
       const {uid:theirUid, name:theirName}=pendingConnect;
-      // Add them to my friends
-      await setDoc(doc(db,'users',currentUser.uid),{friends:arrayUnion(theirUid)},{merge:true});
+      // Add them to my friends with metadata
+      await setDoc(doc(db,'users',currentUser.uid),{
+        friends:arrayUnion(theirUid),
+        [`friendsInfo.${theirUid}`]:{addedOn:todayKey}
+      },{merge:true});
       // Write incoming friend request to their account
       await setDoc(doc(db,'users',theirUid,'incomingFriends',currentUser.uid),{
         uid:currentUser.uid,
@@ -1419,7 +1422,9 @@
       const toAdd=[];
       snap.forEach(d=>{ if(!myFriends.includes(d.id)) toAdd.push(d.id); });
       if(toAdd.length){
-        await setDoc(doc(db,'users',currentUser.uid),{friends:arrayUnion(...toAdd)},{merge:true});
+        const infoUpdates={friends:arrayUnion(...toAdd)};
+        snap.forEach(d=>{ infoUpdates[`friendsInfo.${d.id}`]={addedOn:d.data().addedOn||todayKey}; });
+        await setDoc(doc(db,'users',currentUser.uid),infoUpdates,{merge:true});
       }
       // Delete processed requests
       for(const d of snap.docs){ await deleteDoc(d.ref); }
@@ -1429,12 +1434,16 @@
   async function loadFriendsData(){
     try{
       const myDoc=await getDoc(doc(db,'users',currentUser.uid));
-      const friends=myDoc.exists()?(myDoc.data().friends||[]):[];
+      const myData=myDoc.exists()?myDoc.data():{};
+      const friends=myData.friends||[];
+      const friendsInfo=myData.friendsInfo||{};
       friendsData={};
       for(const uid of friends){
         try{
           const snap=await getDoc(doc(db,'publicProfiles',uid));
-          if(snap.exists()) friendsData[uid]=snap.data();
+          if(snap.exists()){
+            friendsData[uid]={...snap.data(), addedOn:friendsInfo[uid]?.addedOn||null};
+          }
         }catch(e){}
       }
     }catch(e){}
@@ -1492,7 +1501,8 @@
           <div class="friend-avatar">${ini}</div>
           <div>
             <div class="friend-name">${f.displayName||'Friend'}</div>
-            <div class="friend-since">Since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
+            <div class="friend-since">Member since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
+            ${friendsData[uid]?.addedOn?`<div class="friend-since" style="color:var(--green);">Friends since ${MONTHS[keyToDate(friendsData[uid].addedOn).getMonth()].slice(0,3)+' '+keyToDate(friendsData[uid].addedOn).getDate()+', '+keyToDate(friendsData[uid].addedOn).getFullYear()}</div>`:''}
           </div>
         </div>
         <div class="friend-stats">
