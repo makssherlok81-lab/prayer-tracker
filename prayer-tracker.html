@@ -725,6 +725,15 @@
   window.signInWithGoogle=async()=>{ try{ await signInWithPopup(auth,provider); }catch(e){ alert('Sign-in failed: '+e.message); } };
   window.signOut=async()=>{ await fbSignOut(auth); window.location.reload(); };
 
+  // Fallback: if Firebase takes more than 2 seconds, show login screen
+  window._loadTimeout = setTimeout(()=>{
+    const ls=document.getElementById('loadingScreen');
+    if(ls){
+      ls.style.display='none';
+      document.getElementById('authScreen').style.display='flex';
+    }
+  }, 2000);
+
   // Set persistence BEFORE listening to auth state
   setPersistence(auth, browserLocalPersistence).then(()=>{
   onAuthStateChanged(auth,async user=>{
@@ -751,6 +760,7 @@
     const ls=document.getElementById('loadingScreen');
     ls.classList.add('hidden');
     setTimeout(()=>ls.style.display='none', 450);
+    clearTimeout(window._loadTimeout);
   });
   }).catch(e=>console.error('Persistence error:',e));
 
