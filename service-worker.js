@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prayer-tracker-v1';
+const CACHE_NAME = 'prayer-tracker-v3';
 const ASSETS = [
   '/prayer-tracker/prayer-tracker.html',
   '/prayer-tracker/manifest.json',
@@ -23,8 +23,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network first for Firebase, cache first for local assets
-  if (e.request.url.includes('firebase') || e.request.url.includes('gstatic')) {
+  // Always fetch HTML fresh from network, cache everything else
+  if (e.request.url.endsWith('.html') || e.request.url.includes('firebase') || e.request.url.includes('gstatic')) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
   } else {
     e.respondWith(
