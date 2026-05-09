@@ -268,9 +268,43 @@
     .connect-btns { display:flex; gap:10px; }
     .connect-yes { flex:1; background:var(--green); color:white; border:none; border-radius:8px; padding:12px; cursor:pointer; font-size:14px; font-family:inherit; font-weight:500; }
     .connect-no { flex:1; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:12px; cursor:pointer; font-size:14px; color:var(--text); font-family:inherit; }
+
+    /* LOADING SCREEN */
+    #loadingScreen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; width: 100%; position: fixed; inset: 0;
+      background: #0F6E56; z-index: 9999;
+      transition: opacity .4s ease;
+    }
+    #loadingScreen.hidden { opacity: 0; pointer-events: none; }
+    .loading-logo { width: 80px; height: 80px; margin-bottom: 0; animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.06); opacity: .85; } }
+
+    @keyframes flicker {
+      0%,100%{ transform: scaleY(1) scaleX(1); opacity: 1; }
+      20%{ transform: scaleY(1.08) scaleX(0.95); opacity: .95; }
+      40%{ transform: scaleY(0.94) scaleX(1.04); opacity: 1; }
+      60%{ transform: scaleY(1.06) scaleX(0.97); opacity: .92; }
+      80%{ transform: scaleY(0.97) scaleX(1.02); opacity: .98; }
+    }
+    @keyframes flicker-inner {
+      0%,100%{ transform: scaleY(1) scaleX(1); opacity: .75; }
+      25%{ transform: scaleY(1.12) scaleX(0.9); opacity: .9; }
+      50%{ transform: scaleY(0.92) scaleX(1.08); opacity: .7; }
+      75%{ transform: scaleY(1.05) scaleX(0.94); opacity: .85; }
+    }
+    .flame-outer { transform-origin: 50% 80%; animation: flicker 1.8s ease-in-out infinite; }
+    .flame-inner { transform-origin: 50% 80%; animation: flicker-inner 1.3s ease-in-out infinite; }
   </style>
 </head>
 <body>
+
+<div id="loadingScreen">
+  <svg class="loading-logo" viewBox="0 0 40 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="rgba(255,255,255,0.9)"/>
+    <path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="rgba(255,255,255,0.45)"/>
+  </svg>
+</div>
 
 <div id="authScreen">
   <div class="auth-logo">
@@ -663,6 +697,10 @@
       document.getElementById('authScreen').style.display='flex';
       document.getElementById('mainApp').style.display='none';
     }
+    // Hide loading screen
+    const ls=document.getElementById('loadingScreen');
+    ls.classList.add('hidden');
+    setTimeout(()=>ls.style.display='none', 450);
   });
   }).catch(e=>console.error('Persistence error:',e));
 
@@ -835,7 +873,22 @@
   }
 
   function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
-  function lanternSVG(){ return `<svg width="44" height="58" viewBox="0 0 46 62" fill="none"><line x1="23" y1="1" x2="23" y2="8" stroke="#854F0B" stroke-width="2" stroke-linecap="round"/><rect x="13" y="8" width="20" height="6" rx="3" fill="#854F0B"/><rect x="9" y="14" width="28" height="34" rx="5" fill="#FAEEDA"/><line x1="9" y1="14" x2="9" y2="48" stroke="#854F0B" stroke-width="2"/><line x1="37" y1="14" x2="37" y2="48" stroke="#854F0B" stroke-width="2"/><path d="M23 26 C23 26 19 31 19 35 C19 38 20.8 41 23 41 C25.2 41 27 38 27 35 C27 31 23 26 23 26 Z" fill="#EF9F27"/><path d="M23 33 C23 33 21 35 21 37 C21 38.2 21.9 39 23 39 C24.1 39 25 38.2 25 37 C25 35 23 33 23 33 Z" fill="#FAC775"/><rect x="13" y="48" width="20" height="6" rx="3" fill="#854F0B"/><path d="M9 14 L5 20 L5 42 L9 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M37 14 L41 20 L41 42 L37 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`; }
+  function lanternSVG(){ return `<svg width="44" height="58" viewBox="0 0 46 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="23" y1="1" x2="23" y2="8" stroke="#854F0B" stroke-width="2" stroke-linecap="round"/>
+    <rect x="13" y="8" width="20" height="6" rx="3" fill="#854F0B"/>
+    <rect x="9" y="14" width="28" height="34" rx="5" fill="#FAEEDA"/>
+    <line x1="9" y1="14" x2="9" y2="48" stroke="#854F0B" stroke-width="2"/>
+    <line x1="37" y1="14" x2="37" y2="48" stroke="#854F0B" stroke-width="2"/>
+    <path d="M9 14 L5 20 L5 42 L9 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M37 14 L41 20 L41 42 L37 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <g class="flame-outer">
+      <path d="M23 26 C23 26 19 31 19 35 C19 38 20.8 41 23 41 C25.2 41 27 38 27 35 C27 31 23 26 23 26 Z" fill="#EF9F27"/>
+    </g>
+    <g class="flame-inner">
+      <path d="M23 33 C23 33 21 35 21 37 C21 38.2 21.9 39 23 39 C24.1 39 25 38.2 25 37 C25 35 23 33 23 33 Z" fill="#FAC775"/>
+    </g>
+    <rect x="13" y="48" width="20" height="6" rx="3" fill="#854F0B"/>
+  </svg>`; }
   function updateFireAnim(){
     const cnt=prayerCount(todayKey);
     const s=[()=>flameSVG(16,22,'#2C2C2A','#444441'),()=>flameSVG(20,28,'#BA7517','#FAC775'),()=>flameSVG(24,34,'#993C1D','#EF9F27'),()=>flameSVG(30,42,'#BA7517','#FAC775'),()=>flameSVG(36,50,'#854F0B','#EF9F27'),()=>lanternSVG()];
