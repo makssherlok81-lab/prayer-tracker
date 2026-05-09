@@ -295,6 +295,59 @@
     }
     .flame-outer { transform-origin: 50% 80%; animation: flicker 1.8s ease-in-out infinite; }
     .flame-inner { transform-origin: 50% 80%; animation: flicker-inner 1.3s ease-in-out infinite; }
+
+    /* CHALLENGES */
+    #challengesSheet { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; align-items:flex-end; justify-content:center; }
+    #challengesSheet.open { display:flex; }
+    #challengesInner { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:680px; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); padding:0 0 40px; }
+    #challengesSheet.open #challengesInner { transform:translateY(0); }
+
+    /* Challenge card */
+    .ch-card { background:var(--bg); border-radius:var(--r); padding:16px; margin-bottom:10px; border:0.5px solid var(--border); }
+    .ch-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .ch-card-title { font-size:15px; font-weight:600; color:var(--text); }
+    .ch-card-meta { font-size:11px; color:var(--text2); margin-top:3px; }
+    .ch-badge { font-size:10px; font-weight:500; padding:3px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+    .ch-badge.active { background:var(--green-pale); color:var(--green); }
+    .ch-badge.ended { background:var(--bg); color:var(--text2); border:0.5px solid var(--border2); }
+    .ch-badge.strict { background:#FFF3E0; color:#E65100; }
+    .ch-section-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:8px; margin-top:12px; }
+    .ch-member-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:0.5px solid var(--border); }
+    .ch-member-row:last-child { border-bottom:none; }
+    .ch-member-avatar { width:28px; height:28px; border-radius:50%; background:var(--green-pale); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--green); flex-shrink:0; }
+    .ch-member-name { font-size:13px; color:var(--text); flex:1; }
+    .ch-member-count { font-size:12px; font-weight:500; color:var(--text2); }
+    .ch-done-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .ch-done-dot.done { background:var(--green); }
+    .ch-done-dot.pending { background:var(--border); }
+    .ch-my-action { margin-top:12px; }
+    .ch-complete-btn { width:100%; background:var(--green); color:white; border:none; border-radius:8px; padding:11px; cursor:pointer; font-size:14px; font-family:inherit; font-weight:500; transition:opacity .2s; }
+    .ch-complete-btn:active { opacity:.8; }
+    .ch-complete-btn.done { background:var(--green-pale); color:var(--green); cursor:default; }
+    .ch-complete-btn.not-applicable { background:var(--bg); color:var(--text2); border:0.5px solid var(--border2); cursor:default; font-size:12px; }
+    .ch-invite-btn { width:100%; background:transparent; color:var(--green); border:0.5px solid var(--green); border-radius:8px; padding:9px; cursor:pointer; font-size:13px; font-family:inherit; margin-top:7px; }
+    .ch-end-btn { width:100%; background:#fee; color:#c00; border:0.5px solid rgba(200,0,0,0.2); border-radius:8px; padding:9px; cursor:pointer; font-size:12px; font-family:inherit; margin-top:7px; }
+    .ch-progress-bar { height:4px; background:var(--border); border-radius:2px; margin-top:10px; }
+    .ch-progress-fill { height:100%; border-radius:2px; background:var(--green); transition:width .4s; }
+
+    /* Create challenge form */
+    #createChallengeSheet { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; align-items:flex-end; justify-content:center; }
+    #createChallengeSheet.open { display:flex; }
+    #createChallengeInner { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:680px; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); padding:0 0 40px; }
+    #createChallengeSheet.open #createChallengeInner { transform:translateY(0); }
+    .form-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text2); margin-bottom:8px; margin-top:16px; display:block; }
+    .form-input { width:100%; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:11px 14px; font-size:14px; color:var(--text); font-family:inherit; outline:none; }
+    .form-input:focus { border-color:var(--green); }
+    .form-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .form-opt { background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:10px 12px; cursor:pointer; font-size:13px; color:var(--text); font-family:inherit; text-align:left; transition:all .15s; }
+    .form-opt.selected { background:var(--green-pale); border-color:var(--green); color:var(--green); font-weight:500; }
+    .form-opt.full { grid-column:1/-1; }
+    .form-submit { width:100%; background:var(--green); color:white; border:none; border-radius:8px; padding:13px; cursor:pointer; font-size:15px; font-family:inherit; font-weight:500; margin-top:20px; }
+    .template-card { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; cursor:pointer; margin-bottom:8px; transition:all .15s; }
+    .template-card:hover { border-color:var(--green); background:var(--green-pale); }
+    .template-icon { font-size:20px; flex-shrink:0; }
+    .template-name { font-size:14px; font-weight:500; color:var(--text); }
+    .template-desc { font-size:11px; color:var(--text2); margin-top:2px; }
   </style>
 </head>
 <body>
@@ -455,10 +508,7 @@
   <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
   <div style="padding:0 24px 8px;">
     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">🤝 Challenges</div>
-    <div style="background:var(--bg);border-radius:var(--r);padding:16px;text-align:center;">
-      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">Coming soon</div>
-      <div style="font-size:12px;color:var(--text2);">Invite friends & family to fast or pray together</div>
-    </div>
+    <button onclick="closeMenu();openChallenges();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View challenges →</button>
   </div>
 
   <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
@@ -557,7 +607,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
   const app = initializeApp({
     apiKey: "AIzaSyBspu-SKYW74XWEqEL0-L4pFA_gEwgcvhs",
@@ -691,8 +741,8 @@
       await initFriendSetup(uData);
       await processIncomingFriends();
       showApp();
-      // Check if opened via friend invite link
-      setTimeout(()=>checkAddFriendParam(), 800);
+      // Check if opened via invite links
+      setTimeout(async()=>{ await checkAddFriendParam(); await checkChallengeParam(); }, 800);
     } else {
       document.getElementById('authScreen').style.display='flex';
       document.getElementById('mainApp').style.display='none';
@@ -1421,6 +1471,238 @@
   document.getElementById('confirmYesBtn').onclick=async()=>{ if(confirmCallback) await confirmCallback(); closeConfirm(); };
 
 
+
+  // ── CHALLENGES ──
+  let chForm = { type:'fasting', mode:'soft', days:7 };
+  const TEMPLATES = [
+    { name:'Dhul Hijjah Fasting', type:'fasting', mode:'soft', days:10, icon:'🌙', desc:'Fast the first 10 sacred days' },
+    { name:'Shawwal 6 Fasts',     type:'fasting', mode:'soft', days:6,  icon:'🌙', desc:'6 voluntary fasts after Ramadan' },
+    { name:'7-Day Prayer Streak', type:'prayers', mode:'strict', days:7, icon:'🕌', desc:'All 5 prayers for 7 days straight' },
+    { name:'30-Day Prayer Goal',  type:'prayers', mode:'soft', days:30, icon:'🕌', desc:'Personal prayer challenge' },
+    { name:'Duha Every Day',      type:'duha',    mode:'soft', days:30, icon:'🤲', desc:'Pray Duha daily for a month' },
+  ];
+  const TYPE_LABELS = { fasting:'Fasting 🌙', prayers:'All 5 Prayers 🕌', duha:'Duha 🤲', witr:'Witr ✨' };
+
+  window.openChallenges=async()=>{
+    document.getElementById('challengesSheet').classList.add('open');
+    await buildChallengesList();
+    // drag to dismiss
+    addDragDismiss(
+      document.querySelector('#challengesInner .hifz-handle'),
+      document.getElementById('challengesInner'),
+      ()=>document.getElementById('challengesSheet').classList.remove('open')
+    );
+  };
+  window.closeChallengesSheet=(e)=>{
+    if(e.target===document.getElementById('challengesSheet'))
+      document.getElementById('challengesSheet').classList.remove('open');
+  };
+
+  window.openCreateChallenge=()=>{
+    buildTemplateList();
+    document.getElementById('createChallengeSheet').classList.add('open');
+    addDragDismiss(
+      document.querySelector('#createChallengeInner .hifz-handle'),
+      document.getElementById('createChallengeInner'),
+      ()=>document.getElementById('createChallengeSheet').classList.remove('open')
+    );
+  };
+  window.closeCreateSheet=(e)=>{
+    if(e.target===document.getElementById('createChallengeSheet'))
+      document.getElementById('createChallengeSheet').classList.remove('open');
+  };
+
+  function buildTemplateList(){
+    const el=document.getElementById('templateList'); el.innerHTML='';
+    TEMPLATES.forEach(t=>{
+      const card=document.createElement('div'); card.className='template-card';
+      card.innerHTML=`<span class="template-icon">${t.icon}</span>
+        <div><div class="template-name">${t.name}</div><div class="template-desc">${t.desc} · ${t.days} days</div></div>`;
+      card.onclick=()=>applyTemplate(t);
+      el.appendChild(card);
+    });
+  }
+
+  function applyTemplate(t){
+    chForm={type:t.type, mode:t.mode, days:t.days};
+    document.getElementById('chName').value=t.name;
+    // Update UI selections
+    document.querySelectorAll('#chTypeOptions .form-opt').forEach(b=>{
+      b.classList.toggle('selected', b.getAttribute('onclick').includes(t.type));
+    });
+    submitChallenge();
+  }
+
+  window.selectChOpt=(field, val, btn)=>{
+    chForm[field]=val;
+    btn.closest('.form-options').querySelectorAll('.form-opt').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    if(field==='days') document.getElementById('customDaysWrap').style.display=val===0?'block':'none';
+  };
+
+  window.submitChallenge=async()=>{
+    const name=document.getElementById('chName').value.trim()||TYPE_LABELS[chForm.type]+' Challenge';
+    let days=chForm.days;
+    if(days===0){ days=parseInt(document.getElementById('chCustomDays').value)||7; }
+    const endsOn=addDays(todayKey, days);
+    const challenge={
+      name, type:chForm.type, mode:chForm.mode,
+      createdBy:currentUser.uid,
+      createdByName:currentUser.displayName||'',
+      createdAt:todayKey, endsOn, active:true,
+      members:[currentUser.uid],
+      completions:{ [currentUser.uid]:{ displayName:currentUser.displayName||'', dates:[] } }
+    };
+    try{
+      const ref=doc(collection(db,'challenges'));
+      await setDoc(ref, challenge);
+      document.getElementById('createChallengeSheet').classList.remove('open');
+      // Show invite link
+      const link=`${window.location.href.split('?')[0]}?challenge=${ref.id}`;
+      await navigator.clipboard.writeText(link).catch(()=>{});
+      alert(`Challenge created! 🎉
+
+Invite link copied:
+${link}
+
+Share it to invite others!`);
+      await buildChallengesList();
+    }catch(e){ alert('Failed to create: '+e.message); }
+  };
+
+  async function buildChallengesList(){
+    const el=document.getElementById('challengesList'); el.innerHTML='';
+    try{
+      // Get challenges where I'm a member
+      const q=query(collection(db,'challenges'),where('members','array-contains',currentUser.uid));
+      const snap=await getDocs(q);
+      if(snap.empty){
+        el.innerHTML=`<div style="text-align:center;padding:32px 16px;">
+          <div style="font-size:24px;margin-bottom:10px;">🤝</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px;">No challenges yet</div>
+          <div style="font-size:12px;color:var(--text2);">Create one and invite friends to join!</div>
+        </div>`;
+        return;
+      }
+      const challenges=[];
+      snap.forEach(d=>challenges.push({id:d.id,...d.data()}));
+      // Sort: active first, then by date
+      challenges.sort((a,b)=>(b.active?1:0)-(a.active?1:0)||(a.endsOn>b.endsOn?1:-1));
+      challenges.forEach(ch=>el.appendChild(buildChallengeCard(ch)));
+    }catch(e){
+      el.innerHTML=`<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Failed to load. Check your connection.</div>`;
+    }
+  }
+
+  function buildChallengeCard(ch){
+    const card=document.createElement('div'); card.className='ch-card';
+    const isCreator=ch.createdBy===currentUser.uid;
+    const myComp=ch.completions?.[currentUser.uid]||{dates:[]};
+    const doneToday=myComp.dates?.includes(todayKey);
+    const daysLeft=daysDiff(todayKey,ch.endsOn);
+    const isActive=ch.active&&todayKey<=ch.endsOn;
+    const totalDays=daysDiff(ch.createdAt,ch.endsOn);
+
+    // Members sorted by completion count
+    const members=Object.entries(ch.completions||{})
+      .map(([uid,d])=>({uid,name:d.displayName||'Member',count:(d.dates||[]).length,doneToday:(d.dates||[]).includes(todayKey)}))
+      .sort((a,b)=>b.count-a.count);
+
+    const todayDone=members.filter(m=>m.doneToday).length;
+    const topCount=members[0]?.count||0;
+
+    card.innerHTML=`
+      <div class="ch-card-head">
+        <div>
+          <div class="ch-card-title">${ch.name}</div>
+          <div class="ch-card-meta">${TYPE_LABELS[ch.type]||ch.type} · ${ch.mode==='strict'?'Group streak':'Individual'}</div>
+          <div class="ch-card-meta">${isActive?`${daysLeft} day${daysLeft!==1?'s':''} left`:'Ended '+ch.endsOn}</div>
+        </div>
+        <span class="ch-badge ${isActive?'active':'ended'}">${isActive?'Active':'Ended'}</span>
+      </div>
+      ${isActive?`<div class="ch-progress-bar"><div class="ch-progress-fill" style="width:${Math.round((daysDiff(ch.createdAt,todayKey)/Math.max(totalDays,1))*100)}%"></div></div>`:''}
+
+      <div class="ch-section-title">Today — ${todayDone}/${members.length} completed</div>
+      ${members.slice(0,6).map(m=>`
+        <div class="ch-member-row">
+          <div class="ch-member-avatar">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+          <span class="ch-member-name">${m.name}${m.uid===currentUser.uid?' (you)':''}</span>
+          <div class="ch-done-dot ${m.doneToday?'done':'pending'}">
+            ${m.doneToday?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
+          </div>
+        </div>`).join('')}
+
+      <div class="ch-section-title">Leaderboard</div>
+      ${members.slice(0,5).map((m,i)=>`
+        <div class="ch-member-row">
+          <span style="font-size:13px;width:20px;flex-shrink:0;color:${i===0?'#D4A017':i===1?'#888':i===2?'#A0522D':'var(--text2)'};">
+            ${i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`}
+          </span>
+          <div class="ch-member-avatar">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+          <span class="ch-member-name">${m.name}${m.uid===currentUser.uid?' (you)':''}</span>
+          <span class="ch-member-count">${m.count} day${m.count!==1?'s':''}</span>
+        </div>`).join('')}
+
+      ${isActive?`<div class="ch-my-action">
+        <button class="ch-complete-btn ${doneToday?'done':''}" onclick="markChallengeComplete('${ch.id}')" ${doneToday?'disabled':''}>
+          ${doneToday?'✓ Completed today':'Mark today as done'}
+        </button>
+        <button class="ch-invite-btn" onclick="copyChallengeLink('${ch.id}')">Share invite link 🔗</button>
+        ${isCreator?`<button class="ch-end-btn" onclick="endChallenge('${ch.id}')">End challenge</button>`:''}
+      </div>`:''}`;
+
+    return card;
+  }
+
+  window.markChallengeComplete=async(id)=>{
+    try{
+      await updateDoc(doc(db,'challenges',id),{
+        [`completions.${currentUser.uid}.dates`]:arrayUnion(todayKey),
+        [`completions.${currentUser.uid}.displayName`]:currentUser.displayName||''
+      });
+      await buildChallengesList();
+    }catch(e){ alert('Failed: '+e.message); }
+  };
+
+  window.copyChallengeLink=async(id)=>{
+    const link=`${window.location.href.split('?')[0]}?challenge=${id}`;
+    try{ await navigator.clipboard.writeText(link); alert('Invite link copied! 🔗'); }
+    catch(e){ prompt('Copy this link:',link); }
+  };
+
+  window.endChallenge=async(id)=>{
+    if(!confirm('End this challenge for everyone?')) return;
+    try{ await updateDoc(doc(db,'challenges',id),{active:false}); await buildChallengesList(); }
+    catch(e){ alert('Failed: '+e.message); }
+  };
+
+  // Handle joining a challenge via link
+  async function checkChallengeParam(){
+    const params=new URLSearchParams(window.location.search);
+    const id=params.get('challenge');
+    if(!id||!currentUser) return;
+    window.history.replaceState({},'',window.location.pathname);
+    try{
+      const snap=await getDoc(doc(db,'challenges',id));
+      if(!snap.exists()){ alert('Challenge not found.'); return; }
+      const ch=snap.data();
+      if(ch.members?.includes(currentUser.uid)){ 
+        alert("You're already in this challenge!"); 
+        openChallenges(); return; 
+      }
+      if(!ch.active||todayKey>ch.endsOn){ alert('This challenge has ended.'); return; }
+      if(confirm(`Join "${ch.name}"?
+${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · ends ${ch.endsOn}`)){
+        await updateDoc(doc(db,'challenges',id),{
+          members:arrayUnion(currentUser.uid),
+          [`completions.${currentUser.uid}`]:{displayName:currentUser.displayName||'',dates:[]}
+        });
+        alert(`You've joined the challenge! 🎉`);
+        openChallenges();
+      }
+    }catch(e){ alert('Failed to join: '+e.message); }
+  }
+
   // ── FRIENDS SYSTEM ──
 
   function generateFriendCode(){
@@ -1692,6 +1974,62 @@
   }
 </script>
 
+
+
+<!-- CHALLENGES SHEET -->
+<div id="challengesSheet" onclick="closeChallengesSheet(event)">
+  <div id="challengesInner">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:18px;font-weight:600;color:var(--text);">🤝 Challenges</div>
+      <button onclick="openCreateChallenge()" style="background:var(--green);color:white;border:none;border-radius:20px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;">+ New</button>
+    </div>
+    <div style="padding:16px 24px;" id="challengesList">
+      <div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE CHALLENGE SHEET -->
+<div id="createChallengeSheet" onclick="closeCreateSheet(event)">
+  <div id="createChallengeInner">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
+      <button onclick="closeCreateSheet({target:document.getElementById('createChallengeSheet')})" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
+    </div>
+    <div style="padding:0 24px;">
+      <div style="margin-top:14px;margin-bottom:8px;font-size:13px;font-weight:500;color:var(--text2);">Quick start with a template</div>
+      <div id="templateList"></div>
+      <div style="text-align:center;margin:12px 0;font-size:11px;color:var(--text2);">— or create custom —</div>
+      <label class="form-label">Challenge name</label>
+      <input class="form-input" id="chName" placeholder="e.g. Ramadan prep with the crew"/>
+      <label class="form-label">Type</label>
+      <div class="form-options" id="chTypeOptions">
+        <button class="form-opt selected" onclick="selectChOpt('type','fasting',this)">🌙 Fasting</button>
+        <button class="form-opt" onclick="selectChOpt('type','prayers',this)">🕌 All 5 prayers</button>
+        <button class="form-opt" onclick="selectChOpt('type','duha',this)">🤲 Duha</button>
+        <button class="form-opt" onclick="selectChOpt('type','witr',this)">✨ Witr</button>
+      </div>
+      <label class="form-label">Mode</label>
+      <div class="form-options">
+        <button class="form-opt selected" onclick="selectChOpt('mode','soft',this)">🤝 Soft — individual</button>
+        <button class="form-opt" onclick="selectChOpt('mode','strict',this)">🔥 Strict — group streak</button>
+      </div>
+      <label class="form-label">Duration</label>
+      <div class="form-options">
+        <button class="form-opt selected" onclick="selectChOpt('days',7,this)">7 days</button>
+        <button class="form-opt" onclick="selectChOpt('days',14,this)">14 days</button>
+        <button class="form-opt" onclick="selectChOpt('days',30,this)">30 days</button>
+        <button class="form-opt" onclick="selectChOpt('days',0,this)">Custom…</button>
+      </div>
+      <div id="customDaysWrap" style="display:none;margin-top:8px;">
+        <input class="form-input" id="chCustomDays" type="number" placeholder="Number of days" min="1" max="365"/>
+      </div>
+      <button class="form-submit" onclick="submitChallenge()">Create & get invite link 🔗</button>
+    </div>
+  </div>
+</div>
 
 <!-- FRIENDS SHEET -->
 <div id="friendsSheet" onclick="closeFriendsSheet(event)">
