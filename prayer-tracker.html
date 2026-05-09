@@ -516,7 +516,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
   const app = initializeApp({
@@ -528,6 +528,7 @@
     appId: "1:66232408397:web:2601743c8f222cc88fff04"
   });
   const auth = getAuth(app), db = getFirestore(app), provider = new GoogleAuthProvider();
+  setPersistence(auth, browserLocalPersistence).catch(e=>console.error(e));
 
   const PRAYERS = [
     { id:'fajr',name:'Fajr',arabic:'الفجر',hasSunnah:true },
