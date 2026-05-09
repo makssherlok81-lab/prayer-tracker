@@ -228,6 +228,34 @@
     .review-day-items { display:flex; flex-direction:column; gap:3px; }
     .review-day-item { font-size:12px; color:var(--text2); padding:4px 10px; background:var(--bg); border-radius:6px; }
     .review-day-item.juz-complete { color:var(--green); font-weight:500; }
+
+    /* FRIENDS */
+    .friend-card { background:var(--bg); border-radius:var(--r); padding:14px; margin-bottom:8px; }
+    .friend-card-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .friend-avatar { width:36px; height:36px; border-radius:50%; background:var(--green-pale); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--green); flex-shrink:0; }
+    .friend-name { font-size:14px; font-weight:500; color:var(--text); }
+    .friend-since { font-size:11px; color:var(--text2); margin-top:1px; }
+    .friend-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .friend-stat { display:flex; align-items:center; gap:5px; }
+    .friend-stat-val { font-size:13px; font-weight:500; color:var(--text); }
+    .friend-stat-lbl { font-size:11px; color:var(--text2); }
+    .friend-remove { background:none; border:none; cursor:pointer; font-size:11px; color:var(--text2); padding:4px 0; margin-top:8px; font-family:inherit; text-decoration:underline; }
+    .invite-link-box { background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:12px 14px; margin-bottom:10px; }
+    .invite-link-label { font-size:11px; color:var(--text2); margin-bottom:6px; }
+    .invite-link-row { display:flex; align-items:center; gap:8px; }
+    .invite-link-text { font-size:12px; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .copy-btn { background:var(--green); color:white; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px; font-family:inherit; white-space:nowrap; flex-shrink:0; }
+    .copy-btn:active { opacity:.8; }
+    /* Connect popup */
+    #connectPopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:600; align-items:center; justify-content:center; padding:20px; }
+    #connectPopup.open { display:flex; }
+    .connect-inner { background:var(--card); border-radius:var(--r); padding:28px 24px; width:320px; max-width:100%; text-align:center; }
+    .connect-avatar { width:56px; height:56px; border-radius:50%; background:var(--green-pale); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; color:var(--green); margin:0 auto 12px; }
+    .connect-title { font-size:17px; font-weight:600; color:var(--text); margin-bottom:6px; }
+    .connect-sub { font-size:13px; color:var(--text2); margin-bottom:24px; line-height:1.5; }
+    .connect-btns { display:flex; gap:10px; }
+    .connect-yes { flex:1; background:var(--green); color:white; border:none; border-radius:8px; padding:12px; cursor:pointer; font-size:14px; font-family:inherit; font-weight:500; }
+    .connect-no { flex:1; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:12px; cursor:pointer; font-size:14px; color:var(--text); font-family:inherit; }
   </style>
 </head>
 <body>
@@ -387,6 +415,14 @@
     </div>
   </div>
 
+  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
+  <div style="padding:0 24px 8px;">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">👥 Friends</div>
+    <div id="friendsSection">
+      <div style="font-size:12px;color:var(--text2);text-align:center;padding:8px;">Loading…</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- USER MENU -->
@@ -477,7 +513,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
   const app = initializeApp({
     apiKey: "AIzaSyBspu-SKYW74XWEqEL0-L4pFA_gEwgcvhs",
@@ -550,6 +586,8 @@
   let currentUser=null, signupDate=null, dayData={}, sheetDateKey=null, calYear, calMonth;
   let hifzData={};
   let postponeTarget=null, confirmCallback=null;
+  let friendsData={}; // uid -> publicProfile
+  let pendingConnect=null; // {uid, name, code}
   const today=new Date(), todayKey=fmtKey(today);
 
   function fmtKey(d){ return d.toISOString().split('T')[0]; }
@@ -601,7 +639,14 @@
       else signupDate=psnap.data().signupDate||todayKey;
       for(let i=-6;i<=0;i++){ const d=new Date(today); d.setDate(today.getDate()+i); await loadDayData(fmtKey(d)); }
       await loadHifzData();
+      // Friends setup
+      const userData2=await getDoc(doc(db,'users',user.uid));
+      const uData=userData2.exists()?userData2.data():{};
+      await initFriendSetup(uData);
+      await processIncomingFriends();
       showApp();
+      // Check if opened via friend invite link
+      setTimeout(()=>checkAddFriendParam(), 800);
     } else {
       document.getElementById('authScreen').style.display='flex';
       document.getElementById('mainApp').style.display='none';
@@ -770,6 +815,8 @@
     document.getElementById('menuStatPrayer').textContent=pD;
     document.getElementById('menuStatFast').textContent=fD;
     document.getElementById('menuStatVol').textContent=vD;
+    // Update public profile for friends to see
+    setTimeout(()=>updatePublicProfile(), 1000);
     const memCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
     document.getElementById('menuStatHifz').textContent=memCount+' / 114';
   }
@@ -1235,11 +1282,242 @@
   window.closeConfirm=()=>{ document.getElementById('confirmPopup').classList.remove('open'); confirmCallback=null; };
   document.getElementById('confirmYesBtn').onclick=async()=>{ if(confirmCallback) await confirmCallback(); closeConfirm(); };
 
+
+  // ── FRIENDS SYSTEM ──
+
+  function generateFriendCode(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code='';
+    for(let i=0;i<8;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+    return code;
+  }
+
+  async function initFriendSetup(userData){
+    // Ensure user has a friendCode and publicProfile
+    let friendCode=userData.friendCode;
+    if(!friendCode){
+      friendCode=generateFriendCode();
+      // Make sure code is unique
+      let attempts=0;
+      while(attempts<5){
+        try{
+          const existing=await getDoc(doc(db,'friendCodes',friendCode));
+          if(!existing.exists()) break;
+          friendCode=generateFriendCode(); attempts++;
+        }catch(e){ break; }
+      }
+      await setDoc(doc(db,'users',currentUser.uid),{friendCode},{merge:true});
+      await setDoc(doc(db,'friendCodes',friendCode),{uid:currentUser.uid});
+    }
+    return friendCode;
+  }
+
+  async function updatePublicProfile(extraData={}){
+    if(!currentUser) return;
+    try{
+      const userData=await getDoc(doc(db,'users',currentUser.uid));
+      const friendCode=userData.exists()?userData.data().friendCode:'';
+      const friends=userData.exists()?(userData.data().friends||[]):[];
+      // Compute stats from dayData
+      let pD=0,fD=0,vD=0;
+      const VOLIDS=['ishraq','duha','witr','tahajjud'];
+      for(const[k,v] of Object.entries(dayData)){
+        if(k<signupDate||k>todayKey) continue;
+        if(allPrayersDone(k)) pD++;
+        if(v.fasting) fD++;
+        if(VOLIDS.some(id=>v[id])) vD++;
+      }
+      const hifzCount=Object.values(hifzData).filter(v=>getHS(v)===2).length;
+      // Get streak
+      const streakEl=document.getElementById('streakNum');
+      const prayerStreak=streakEl?parseInt(streakEl.textContent)||0:0;
+      const fastStreakEl=document.getElementById('fastStreakNum');
+      const fastStreak=fastStreakEl?parseInt(fastStreakEl.textContent)||0:0;
+      const profile={
+        displayName:currentUser.displayName||'',
+        memberSince:signupDate,
+        friendCode,
+        friends,
+        prayerDaysTotal:pD,
+        fastDaysTotal:fD,
+        volDaysTotal:vD,
+        hifzCount,
+        prayerStreak,
+        fastStreak,
+        lastUpdated:todayKey,
+        ...extraData
+      };
+      await setDoc(doc(db,'publicProfiles',currentUser.uid),profile,{merge:true});
+    }catch(e){ console.error('updatePublicProfile',e); }
+  }
+
+  async function checkAddFriendParam(){
+    const params=new URLSearchParams(window.location.search);
+    const code=params.get('addFriend');
+    if(!code||!currentUser) return;
+    try{
+      const codeDoc=await getDoc(doc(db,'friendCodes',code));
+      if(!codeDoc.exists()){ alert('Friend link not found or expired.'); return; }
+      const theirUid=codeDoc.data().uid;
+      if(theirUid===currentUser.uid){ alert("That's your own invite link!"); return; }
+      // Check if already friends
+      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const myFriends=myDoc.exists()?(myDoc.data().friends||[]):[];
+      if(myFriends.includes(theirUid)){ 
+        // Already friends
+        window.history.replaceState({},'',window.location.pathname);
+        return; 
+      }
+      // Load their public profile to show name
+      const theirProfile=await getDoc(doc(db,'publicProfiles',theirUid));
+      const theirName=theirProfile.exists()?theirProfile.data().displayName:'Someone';
+      const theirIni=theirName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
+      pendingConnect={uid:theirUid, name:theirName, code};
+      document.getElementById('connectAvatar').textContent=theirIni;
+      document.getElementById('connectTitle').textContent=`Connect with ${theirName}?`;
+      document.getElementById('connectSub').textContent=`You'll both be able to see each other's prayer streak, fasting days, and Hifz progress.`;
+      document.getElementById('connectPopup').classList.add('open');
+      // Clean URL
+      window.history.replaceState({},'',window.location.pathname);
+    }catch(e){ console.error('checkAddFriendParam',e); }
+  }
+
+  window.confirmConnect=async()=>{
+    if(!pendingConnect) return;
+    try{
+      const {uid:theirUid, name:theirName}=pendingConnect;
+      // Add them to my friends
+      await setDoc(doc(db,'users',currentUser.uid),{friends:arrayUnion(theirUid)},{merge:true});
+      // Write incoming friend request to their account
+      await setDoc(doc(db,'users',theirUid,'incomingFriends',currentUser.uid),{
+        uid:currentUser.uid,
+        displayName:currentUser.displayName||'',
+        addedOn:todayKey
+      });
+      // Update my public profile with new friends list
+      await updatePublicProfile();
+      document.getElementById('connectPopup').classList.remove('open');
+      pendingConnect=null;
+      await buildFriendsSection();
+      alert(`Connected with ${theirName}! They'll see your stats next time they open the app. 🤝`);
+    }catch(e){ alert('Connection failed: '+e.message); }
+  };
+  window.closeConnect=()=>{ document.getElementById('connectPopup').classList.remove('open'); pendingConnect=null; };
+
+  async function processIncomingFriends(){
+    // Check if anyone added us while we were away
+    try{
+      const snap=await getDocs(collection(db,'users',currentUser.uid,'incomingFriends'));
+      if(snap.empty) return;
+      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const myFriends=myDoc.exists()?(myDoc.data().friends||[]):[];
+      const toAdd=[];
+      snap.forEach(d=>{ if(!myFriends.includes(d.id)) toAdd.push(d.id); });
+      if(toAdd.length){
+        await setDoc(doc(db,'users',currentUser.uid),{friends:arrayUnion(...toAdd)},{merge:true});
+      }
+      // Delete processed requests
+      for(const d of snap.docs){ await deleteDoc(d.ref); }
+    }catch(e){ console.error('processIncomingFriends',e); }
+  }
+
+  async function loadFriendsData(){
+    try{
+      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const friends=myDoc.exists()?(myDoc.data().friends||[]):[];
+      friendsData={};
+      for(const uid of friends){
+        try{
+          const snap=await getDoc(doc(db,'publicProfiles',uid));
+          if(snap.exists()) friendsData[uid]=snap.data();
+        }catch(e){}
+      }
+    }catch(e){}
+  }
+
+  async function buildFriendsSection(){
+    const el=document.getElementById('friendsSection');
+    if(!el) return;
+    await loadFriendsData();
+    el.innerHTML='';
+
+    // My invite link
+    try{
+      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const code=myDoc.exists()?myDoc.data().friendCode:'';
+      if(code){
+        const baseUrl=window.location.href.split('?')[0];
+        const link=`${baseUrl}?addFriend=${code}`;
+        const linkBox=document.createElement('div'); linkBox.className='invite-link-box';
+        linkBox.innerHTML=`
+          <div class="invite-link-label">Your invite link — share to connect</div>
+          <div class="invite-link-row">
+            <span class="invite-link-text">${link}</span>
+            <button class="copy-btn" onclick="copyInviteLink('${link}')">Copy</button>
+          </div>`;
+        el.appendChild(linkBox);
+      }
+    }catch(e){}
+
+    const uids=Object.keys(friendsData);
+    if(uids.length===0){
+      const empty=document.createElement('div');
+      empty.style.cssText='text-align:center;padding:16px 8px;font-size:12px;color:var(--text2);';
+      empty.textContent='No friends yet. Share your invite link to connect!';
+      el.appendChild(empty);
+      return;
+    }
+
+    uids.forEach(uid=>{
+      const f=friendsData[uid];
+      if(!f) return;
+      const ini=(f.displayName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const card=document.createElement('div'); card.className='friend-card';
+      card.innerHTML=`
+        <div class="friend-card-top">
+          <div class="friend-avatar">${ini}</div>
+          <div>
+            <div class="friend-name">${f.displayName||'Friend'}</div>
+            <div class="friend-since">Since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
+          </div>
+        </div>
+        <div class="friend-stats">
+          <div class="friend-stat"><span style="font-size:14px;">🔥</span><div><div class="friend-stat-val">${f.prayerStreak||0}</div><div class="friend-stat-lbl">day streak</div></div></div>
+          <div class="friend-stat"><span style="font-size:14px;">⭐</span><div><div class="friend-stat-val" style="color:#D4A017;">${f.prayerDaysTotal||0}</div><div class="friend-stat-lbl">days prayed</div></div></div>
+          <div class="friend-stat"><span style="font-size:14px;">🌙</span><div><div class="friend-stat-val" style="color:#7B3F9E;">${f.fastDaysTotal||0}</div><div class="friend-stat-lbl">days fasted</div></div></div>
+          <div class="friend-stat"><span style="font-size:14px;">📖</span><div><div class="friend-stat-val" style="color:#4A90D9;">${f.hifzCount||0}/114</div><div class="friend-stat-lbl">memorized</div></div></div>
+        </div>
+        <button class="friend-remove" onclick="removeFriend('${uid}','${(f.displayName||'friend').replace(/'/g,"\'")}')">Remove friend</button>`;
+      el.appendChild(card);
+    });
+  }
+
+  window.copyInviteLink=async(link)=>{
+    try{
+      await navigator.clipboard.writeText(link);
+      alert('Link copied! Share it on WhatsApp or anywhere. 🔗');
+    }catch(e){
+      // Fallback for older browsers
+      prompt('Copy this link:', link);
+    }
+  };
+
+  window.removeFriend=async(uid, name)=>{
+    if(!confirm(`Remove ${name} from your friends?`)) return;
+    try{
+      await setDoc(doc(db,'users',currentUser.uid),{friends:arrayRemove(uid)},{merge:true});
+      delete friendsData[uid];
+      await updatePublicProfile();
+      await buildFriendsSection();
+    }catch(e){ alert('Failed to remove: '+e.message); }
+  };
+
   // ── MENU ──
   window.openMenu=()=>{
     document.getElementById('menuOverlay').style.display='block';
     const m=document.getElementById('sideMenu'); m.style.display='block';
     setTimeout(()=>m.style.transform='translateX(0)',10);
+    buildFriendsSection();
   };
   window.closeMenu=()=>{
     const m=document.getElementById('sideMenu'); m.style.transform='translateX(-100%)';
@@ -1248,5 +1526,18 @@
   window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
   document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
 </script>
+
+<!-- CONNECT FRIEND POPUP -->
+<div id="connectPopup">
+  <div class="connect-inner">
+    <div class="connect-avatar" id="connectAvatar">?</div>
+    <div class="connect-title" id="connectTitle">Connect with friend?</div>
+    <div class="connect-sub" id="connectSub">You'll both be able to see each other's prayer and fasting stats.</div>
+    <div class="connect-btns">
+      <button class="connect-no" onclick="closeConnect()">Cancel</button>
+      <button class="connect-yes" onclick="confirmConnect()">Connect 🤝</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
