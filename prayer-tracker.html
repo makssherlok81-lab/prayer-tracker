@@ -528,7 +528,6 @@
     appId: "1:66232408397:web:2601743c8f222cc88fff04"
   });
   const auth = getAuth(app), db = getFirestore(app), provider = new GoogleAuthProvider();
-  setPersistence(auth, browserLocalPersistence).catch(e=>console.error(e));
 
   const PRAYERS = [
     { id:'fajr',name:'Fajr',arabic:'الفجر',hasSunnah:true },
@@ -636,6 +635,8 @@
   window.signInWithGoogle=async()=>{ try{ await signInWithPopup(auth,provider); }catch(e){ alert('Sign-in failed: '+e.message); } };
   window.signOut=async()=>{ await fbSignOut(auth); window.location.reload(); };
 
+  // Set persistence BEFORE listening to auth state
+  setPersistence(auth, browserLocalPersistence).then(()=>{
   onAuthStateChanged(auth,async user=>{
     if(user){
       currentUser=user;
@@ -657,6 +658,7 @@
       document.getElementById('mainApp').style.display='none';
     }
   });
+  }).catch(e=>console.error('Persistence error:',e));
 
   async function showApp(){
     document.getElementById('authScreen').style.display='none';
@@ -1502,7 +1504,7 @@
           <div>
             <div class="friend-name">${f.displayName||'Friend'}</div>
             <div class="friend-since">Member since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
-            ${friendsData[uid]?.addedOn?`<div class="friend-since" style="color:var(--green);">Friends since ${MONTHS[keyToDate(friendsData[uid].addedOn).getMonth()].slice(0,3)+' '+keyToDate(friendsData[uid].addedOn).getDate()+', '+keyToDate(friendsData[uid].addedOn).getFullYear()}</div>`:''}
+            <div class="friend-since" style="color:var(--green-mid);">${friendsData[uid]?.addedOn ? 'Friends since '+MONTHS[keyToDate(friendsData[uid].addedOn).getMonth()].slice(0,3)+' '+keyToDate(friendsData[uid].addedOn).getDate()+', '+keyToDate(friendsData[uid].addedOn).getFullYear() : 'Connected ✓'}</div>
           </div>
         </div>
         <div class="friend-stats">
