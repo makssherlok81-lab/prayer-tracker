@@ -269,17 +269,6 @@
     .connect-yes { flex:1; background:var(--green); color:white; border:none; border-radius:8px; padding:12px; cursor:pointer; font-size:14px; font-family:inherit; font-weight:500; }
     .connect-no { flex:1; background:var(--bg); border:0.5px solid var(--border2); border-radius:8px; padding:12px; cursor:pointer; font-size:14px; color:var(--text); font-family:inherit; }
 
-    /* LOADING SCREEN */
-    #loadingScreen {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; width: 100%; position: fixed; inset: 0;
-      background: #0F6E56; z-index: 9999;
-      transition: opacity .4s ease;
-    }
-    #loadingScreen.hidden { opacity: 0; pointer-events: none; }
-    .loading-logo { width: 80px; height: 80px; margin-bottom: 0; animation: pulse 1.8s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.06); opacity: .85; } }
-
     @keyframes flicker {
       0%,100%{ transform: scaleY(1) scaleX(1); opacity: 1; }
       20%{ transform: scaleY(1.08) scaleX(0.95); opacity: .95; }
@@ -348,6 +337,17 @@
     .template-icon { font-size:20px; flex-shrink:0; }
     .template-name { font-size:14px; font-weight:500; color:var(--text); }
     .template-desc { font-size:11px; color:var(--text2); margin-top:2px; }
+
+    /* LOADING SCREEN */
+    #loadingScreen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; width: 100%; position: fixed; inset: 0;
+      background: #0F6E56; z-index: 9999;
+      transition: opacity .4s ease;
+    }
+    #loadingScreen.hidden { opacity: 0; pointer-events: none; }
+    .loading-logo { width: 80px; height: 80px; animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.06); opacity: .85; } }
   </style>
 </head>
 <body>
@@ -725,15 +725,6 @@
   window.signInWithGoogle=async()=>{ try{ await signInWithPopup(auth,provider); }catch(e){ alert('Sign-in failed: '+e.message); } };
   window.signOut=async()=>{ await fbSignOut(auth); window.location.reload(); };
 
-  // Fallback: if Firebase takes more than 2 seconds, show login screen
-  window._loadTimeout = setTimeout(()=>{
-    const ls=document.getElementById('loadingScreen');
-    if(ls){
-      ls.style.display='none';
-      document.getElementById('authScreen').style.display='flex';
-    }
-  }, 2000);
-
   // Set persistence BEFORE listening to auth state
   setPersistence(auth, browserLocalPersistence).then(()=>{
   onAuthStateChanged(auth,async user=>{
@@ -762,9 +753,8 @@
     }
     // Hide loading screen
     const ls=document.getElementById('loadingScreen');
-    ls.classList.add('hidden');
-    setTimeout(()=>ls.style.display='none', 450);
-    clearTimeout(window._loadTimeout);
+    if(ls){ ls.classList.add('hidden'); setTimeout(()=>ls.style.display='none',400); }
+
   });
   }).catch(e=>console.error('Persistence error:',e));
 
@@ -1017,7 +1007,6 @@
     }, { passive: true });
 
     // Left/right swipe on sheet content for day navigation
-    let sX=0, sY=0;
     sheet.addEventListener('touchstart',e=>{ sX=e.touches[0].clientX; sY=e.touches[0].clientY; },{passive:true});
     sheet.addEventListener('touchend',e=>{
       if(dragging) return;
