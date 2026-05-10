@@ -744,14 +744,18 @@
       else signupDate=psnap.data().signupDate||todayKey;
       for(let i=-6;i<=0;i++){ const d=new Date(today); d.setDate(today.getDate()+i); await loadDayData(fmtKey(d)); }
       await loadHifzData();
-      // Friends setup
-      const userData2=await getDoc(doc(db,'users',user.uid));
-      const uData=userData2.exists()?userData2.data():{};
-      await initFriendSetup(uData);
-      await processIncomingFriends();
       showApp();
-      // Check if opened via invite links
-      setTimeout(async()=>{ await checkAddFriendParam(); await checkChallengeParam(); }, 800);
+      // Do heavy operations in background after UI is shown
+      setTimeout(async()=>{
+        try{
+          const userData2=await getDoc(doc(db,'users',user.uid));
+          const uData=userData2.exists()?userData2.data():{};
+          await initFriendSetup(uData);
+          await processIncomingFriends();
+          await checkAddFriendParam();
+          await checkChallengeParam();
+        }catch(e){ console.error(e); }
+      }, 500);
     } else {
       document.getElementById('authScreen').style.display='flex';
       document.getElementById('mainApp').style.display='none';
