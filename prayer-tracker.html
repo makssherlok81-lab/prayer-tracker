@@ -1050,19 +1050,8 @@
     },{passive:true});
   }
 
-  // Apply to Hifz sheet
-  addDragDismiss(
-    document.querySelector('#hifzInner .hifz-handle'),
-    document.getElementById('hifzInner'),
-    ()=>document.getElementById('hifzSheet').classList.remove('open')
-  );
-
-  // Apply to Friends sheet
-  addDragDismiss(
-    document.querySelector('#friendsInner .hifz-handle'),
-    document.getElementById('friendsInner'),
-    ()=>document.getElementById('friendsSheet').classList.remove('open')
-  );
+  // Apply drag-to-dismiss to Hifz and Friends sheets on demand (not at load time)
+  // These are called inside openHifz() and openFriends() instead
   })();
 
   window.navigateSheet=async(dir)=>{
@@ -1199,6 +1188,11 @@
   window.openHifz=async()=>{
     await loadHifzData(); buildHifzSheet();
     document.getElementById('hifzSheet').classList.add('open');
+    addDragDismiss(
+      document.querySelector('#hifzInner .hifz-handle'),
+      document.getElementById('hifzInner'),
+      ()=>document.getElementById('hifzSheet').classList.remove('open')
+    );
   };
   window.closeHifz=(e)=>{ if(e.target===document.getElementById('hifzSheet')) document.getElementById('hifzSheet').classList.remove('open'); };
 
@@ -1881,6 +1875,11 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
   window.openFriends=async()=>{
     document.getElementById('friendsSheet').classList.add('open');
     await buildFriendsSection();
+    addDragDismiss(
+      document.querySelector('#friendsInner .hifz-handle'),
+      document.getElementById('friendsInner'),
+      ()=>document.getElementById('friendsSheet').classList.remove('open')
+    );
   };
   window.closeFriendsSheet=(e)=>{
     if(e.target===document.getElementById('friendsSheet'))
