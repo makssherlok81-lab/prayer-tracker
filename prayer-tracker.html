@@ -338,6 +338,7 @@
     .template-name { font-size:14px; font-weight:500; color:var(--text); }
     .template-desc { font-size:11px; color:var(--text2); margin-top:2px; }
 
+    body.sheet-open { overflow: hidden; touch-action: none; }
     /* LOADING SCREEN */
     #loadingScreen {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -965,6 +966,7 @@
     document.getElementById('sheetSub').textContent=toHijri(d);
     buildSheetPrayers(dateKey); buildSheetVoluntary(dateKey); buildSheetFasting(dateKey);
     document.getElementById('sheetOverlay').classList.add('open');
+    lockScroll();
   };
 
   (function(){
@@ -1014,8 +1016,14 @@
       if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) navigateSheet(dx<0?1:-1);
     },{passive:true});
 
+
+  function lockScroll(){ document.body.classList.add('sheet-open'); }
+  function unlockScroll(){ document.body.classList.remove('sheet-open'); }
   // ── DRAG TO DISMISS — reusable for any sheet ──
   function addDragDismiss(handleEl, innerEl, onDismiss){
+    if(!handleEl||!innerEl) return;
+    if(handleEl._dragBound) return; // prevent adding multiple listeners
+    handleEl._dragBound = true;
     let dY=0, active=false;
     handleEl.addEventListener('touchstart',e=>{
       dY=e.touches[0].clientY; active=true;
@@ -1050,6 +1058,7 @@
   window.closeSheet=(e)=>{
     if(e.target===document.getElementById('sheetOverlay')){
       document.getElementById('sheetOverlay').classList.remove('open');
+      unlockScroll();
       if(sheetDateKey===todayKey){ buildPrayers(todayKey); buildFasting(todayKey); updateBottom(todayKey); updateFireAnim(); }
       updateStreak(); buildStrip(); updateYearlyStats();
     }
@@ -1177,13 +1186,14 @@
   window.openHifz=async()=>{
     await loadHifzData(); buildHifzSheet();
     document.getElementById('hifzSheet').classList.add('open');
+    lockScroll();
     addDragDismiss(
       document.querySelector('#hifzInner .hifz-handle'),
       document.getElementById('hifzInner'),
       ()=>document.getElementById('hifzSheet').classList.remove('open')
     );
   };
-  window.closeHifz=(e)=>{ if(e.target===document.getElementById('hifzSheet')) document.getElementById('hifzSheet').classList.remove('open'); };
+  window.closeHifz=(e)=>{ if(e.target===document.getElementById('hifzSheet')){ document.getElementById('hifzSheet').classList.remove('open'); unlockScroll(); } };
 
   function buildHifzSheet(){
     buildHifzProgress();
@@ -1482,6 +1492,7 @@
 
   window.openChallenges=async()=>{
     document.getElementById('challengesSheet').classList.add('open');
+    lockScroll();
     await buildChallengesList();
     // drag to dismiss
     addDragDismiss(
@@ -1491,22 +1502,25 @@
     );
   };
   window.closeChallengesSheet=(e)=>{
-    if(e.target===document.getElementById('challengesSheet'))
-      document.getElementById('challengesSheet').classList.remove('open');
+    if(e.target===document.getElementById('challengesSheet')){
+      document.getElementById('challengesSheet').classList.remove('open'); unlockScroll();
+    }
   };
 
   window.openCreateChallenge=()=>{
     buildTemplateList();
     document.getElementById('createChallengeSheet').classList.add('open');
+    lockScroll();
     addDragDismiss(
       document.querySelector('#createChallengeInner .hifz-handle'),
       document.getElementById('createChallengeInner'),
-      ()=>document.getElementById('createChallengeSheet').classList.remove('open')
+      ()=>{ document.getElementById('createChallengeSheet').classList.remove('open'); unlockScroll(); }
     );
   };
   window.closeCreateSheet=(e)=>{
-    if(e.target===document.getElementById('createChallengeSheet'))
-      document.getElementById('createChallengeSheet').classList.remove('open');
+    if(e.target===document.getElementById('createChallengeSheet')){
+      document.getElementById('createChallengeSheet').classList.remove('open'); unlockScroll();
+    }
   };
 
   function buildTemplateList(){
@@ -1863,6 +1877,7 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
 
   window.openFriends=async()=>{
     document.getElementById('friendsSheet').classList.add('open');
+    lockScroll();
     await buildFriendsSection();
     addDragDismiss(
       document.querySelector('#friendsInner .hifz-handle'),
@@ -1871,8 +1886,9 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     );
   };
   window.closeFriendsSheet=(e)=>{
-    if(e.target===document.getElementById('friendsSheet'))
-      document.getElementById('friendsSheet').classList.remove('open');
+    if(e.target===document.getElementById('friendsSheet')){
+      document.getElementById('friendsSheet').classList.remove('open'); unlockScroll();
+    }
   };
 
   async function buildFriendsSection(){
