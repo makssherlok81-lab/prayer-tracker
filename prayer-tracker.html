@@ -419,6 +419,7 @@
     </div>
   </div>
 
+  <div id="dailySuggestions" style="background:var(--card);display:none;"></div>
   <div class="section-divider"></div>
 
   <div id="fastingArea">
@@ -484,7 +485,9 @@
       <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div><span class="legend-label">All prayers done</span></div>
       <div class="legend-item"><div class="legend-dot" style="background:rgba(239,159,39,0.35)"></div><span class="legend-label">Some prayers</span></div>
       <div class="legend-item"><div class="legend-dot" style="border:2.5px solid #B05070;background:transparent;width:12px;height:12px;border-radius:50%;"></div><span class="legend-label">Fasted</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#D4A017;"></div><span class="legend-label">Islamic occasion</span></div>
     </div>
+    <div id="occasionsSection" style="margin-top:16px;"></div>
   </div>
 </div>
 
@@ -773,6 +776,9 @@
     document.getElementById('menuEmail').textContent=currentUser.email||'';
     buildStrip(); buildPrayers(todayKey); buildFasting(todayKey);
     updateBottom(todayKey); updateStreak(); updateYearlyStats(); updateFireAnim(); updateAvatarRing();
+    buildDailySuggestions();
+    // Request location for prayer times
+    getUserLocation().then(()=>buildDailySuggestions());
   }
 
   function buildStrip(){
@@ -1119,7 +1125,49 @@
   };
 
   // ── CALENDAR ──
-  window.openCal=()=>{ calYear=today.getFullYear(); calMonth=today.getMonth(); loadMonthData(calYear,calMonth).then(buildCal); document.getElementById('calModal').classList.add('open'); };
+  window.openCal=()=>{
+    calYear=today.getFullYear(); calMonth=today.getMonth();
+    loadMonthData(calYear,calMonth).then(()=>{ buildCal(); buildOccasionsSection(); });
+    document.getElementById('calModal').classList.add('open');
+  };
+
+  function buildOccasionsSection(){
+    const el=document.getElementById('occasionsSection'); if(!el) return;
+    const upcoming=getUpcomingOccasions();
+    if(!upcoming.length){ el.innerHTML=''; return; }
+    el.innerHTML=`<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:10px;">Upcoming occasions</div>`;
+    upcoming.slice(0,6).forEach(occ=>{
+      const div=document.createElement('div');
+      div.style.cssText='padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:7px;';
+      const typeColors={fasting:'#854F0B',special:'#D4A017',eid:'#0F6E56'};
+      const color=typeColors[occ.type]||'var(--text2)';
+      div.innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <div style="font-size:13px;font-weight:500;color:var(--text);">${occ.name}</div>
+          <div style="font-size:11px;color:${color};font-weight:500;">${occ.daysUntil===0?'Today':occ.daysUntil===1?'Tomorrow':'In '+occ.daysUntil+' days'}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);">${occ.desc}</div>
+        ${occ.challenge?`<button onclick="openCreateChallengeFromOccasion('${JSON.stringify(occ.challenge).replace(/'/g,'').replace(/"/g,'&quot;')}')" style="margin-top:7px;background:var(--green);color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;">Start challenge →</button>`:''}`;
+      el.appendChild(div);
+    });
+  }
+
+  window.openCreateChallengeFromOccasion=(chJson)=>{
+    try{
+      const ch=JSON.parse(chJson.replace(/&quot;/g,'"'));
+      closeCal();
+      setTimeout(()=>{
+        openCreateChallenge();
+        setTimeout(()=>{
+          selectCategory(ch.type);
+          setTimeout(()=>{ 
+            const btns=document.querySelectorAll('#subtypeSection .form-opt'); let btn=null; btns.forEach(b=>{ if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(ch.subtype)) btn=b; });
+            if(btn){ selectSubtype(ch.subtype,btn); }
+          },100);
+        },300);
+      },200);
+    }catch(e){}
+  };
   window.closeCal=()=>document.getElementById('calModal').classList.remove('open');
   window.handleCalBg=(e)=>{ if(e.target===document.getElementById('calModal')) closeCal(); };
   window.changeCalMonth=async(dir)=>{
@@ -1149,6 +1197,14 @@
       if(isToday) cls+=' today';
       cell.className=cls; cell.textContent=day;
       if(fasted&&!isFuture&&!bSup){ const ring=document.createElement('div'); ring.className='fast-ring-cal'; wrap.appendChild(ring); }
+      // Islamic occasion indicator
+      const occs=getOccasionForDate(dateKey);
+      if(occs.length&&!bSup){
+        const dot=document.createElement('div');
+        dot.style.cssText='position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#D4A017;';
+        wrap.appendChild(dot);
+        cell.title=occs.map(o=>o.name).join(', ');
+      }
       if(!isFuture&&!bSup) cell.onclick=()=>{ closeCal(); openSheet(dateKey); };
       wrap.appendChild(cell); gridEl.appendChild(wrap);
     }
@@ -1479,6 +1535,420 @@
 
 
 
+
+  // ── PRAYER TIMES ──
+  let userLat=null, userLng=null;
+
+  function calcPrayerTimes(lat, lng, date){
+    // Standard prayer time calculation (Umm al-Qura method)
+    const rad = Math.PI/180, deg = 180/Math.PI;
+    const jd = julianDate(date);
+    const D = jd - 2451545.0;
+    const g = (357.529 + 0.98560028*D) % 360;
+    const q = (280.459 + 0.98564736*D) % 360;
+    const L = (q + 1.915*Math.sin(g*rad) + 0.020*Math.sin(2*g*rad)) % 360;
+    const e = 23.439 - 0.00000036*D;
+    const RA = Math.atan2(Math.cos(e*rad)*Math.sin(L*rad), Math.cos(L*rad))*deg/15;
+    const dec = Math.asin(Math.sin(e*rad)*Math.sin(L*rad))*deg;
+    const EqT = q/15 - RA;
+    const noon = 12 - EqT - lng/15;
+    function hourAngle(angle){ return Math.acos((Math.sin(angle*rad) - Math.sin(lat*rad)*Math.sin(dec*rad))/(Math.cos(lat*rad)*Math.cos(dec*rad)))*deg/15; }
+    const fajrA = hourAngle(-18);
+    const maghribA = hourAngle(-0.8333);
+    const ishaA = hourAngle(-17);
+    return {
+      fajr:   noon - fajrA,
+      sunrise:noon - hourAngle(-0.8333),
+      dhuhr:  noon,
+      asr:    noon + Math.atan2(1, Math.tan(Math.abs(lat-dec)*rad) + 1)*deg/15,
+      maghrib:noon + maghribA,
+      isha:   noon + ishaA
+    };
+  }
+
+  function julianDate(date){
+    let Y=date.getFullYear(), M=date.getMonth()+1, D=date.getDate();
+    if(M<=2){Y--;M+=12;}
+    return Math.floor(365.25*(Y+4716))+Math.floor(30.6001*(M+1))+D-1524.5;
+  }
+
+  function decToTime(dec){ 
+    const h=Math.floor(dec)%24, m=Math.floor((dec%1)*60);
+    return h*60+m; // returns minutes since midnight
+  }
+
+  async function getUserLocation(){
+    return new Promise(resolve=>{
+      if(!navigator.geolocation){ resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(
+        p=>{ userLat=p.coords.latitude; userLng=p.coords.longitude; resolve({lat:userLat,lng:userLng}); },
+        ()=>resolve(null),
+        {timeout:5000, maximumAge:3600000}
+      );
+    });
+  }
+
+  function getMaghribMinutes(){
+    if(userLat!==null && userLng!==null){
+      const times=calcPrayerTimes(userLat,userLng,today);
+      return decToTime(times.maghrib);
+    }
+    return 19*60; // fallback 7pm
+  }
+
+  function isEveningTime(){
+    const now=new Date();
+    const mins=now.getHours()*60+now.getMinutes();
+    const maghrib=getMaghribMinutes();
+    const oneAM=25*60; // 1am next day
+    return mins>=maghrib || mins<60; // after maghrib OR before 1am
+  }
+
+
+  // ── ISLAMIC OCCASIONS ──
+  const OCCASIONS = [
+    { name:"Dhul Hijjah — Sacred Days", hijriMonth:12, hijriDayStart:1,  hijriDayEnd:9,  type:"fasting", desc:"Fast the first 9 days of Dhul Hijjah", challenge:{type:"fasting",subtype:"dhulhijjah"} },
+    { name:"Day of Arafah",              hijriMonth:12, hijriDayStart:9,  hijriDayEnd:9,  type:"special", desc:"The best day of the year — fast and make du'a", challenge:{type:"fasting",subtype:"arafah"} },
+    { name:"Eid al-Adha",                hijriMonth:12, hijriDayStart:10, hijriDayEnd:13, type:"eid",     desc:"Eid Mubarak! Fasting is forbidden these days", challenge:null },
+    { name:"Ashura Fast",                hijriMonth:1,  hijriDayStart:9,  hijriDayEnd:10, type:"fasting", desc:"Fast on the 9th and 10th of Muharram", challenge:{type:"fasting",subtype:"ashura"} },
+    { name:"White Days",                 hijriMonth:0,  hijriDayStart:13, hijriDayEnd:15, type:"fasting", desc:"Fast the 13th, 14th and 15th of each Hijri month", challenge:{type:"fasting",subtype:"whitedays"} },
+  ];
+
+  function getHijriDetails(date){
+    const jd=Math.floor((date.getTime()/86400000)+2440587.5);
+    let l=jd-1948440+10632;
+    const n=Math.floor((l-1)/10631);
+    l=l-10631*n+354;
+    const j=Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)+Math.floor(l/5670)*Math.floor((43*l)/15238);
+    l=l-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
+    const month=Math.floor((24*l)/709), day=l-Math.floor((709*month)/24), year=30*n+j-30;
+    return {day,month,year};
+  }
+
+  function getUpcomingOccasions(){
+    const upcoming=[];
+    // Check next 180 days
+    for(let i=0;i<=180;i++){
+      const d=new Date(today); d.setDate(d.getDate()+i);
+      const h=getHijriDetails(d);
+      OCCASIONS.forEach(occ=>{
+        const matchMonth = occ.hijriMonth===0 || occ.hijriMonth===h.month;
+        const matchDay = h.day>=occ.hijriDayStart && h.day<=occ.hijriDayEnd;
+        if(matchMonth && matchDay){
+          const key=occ.name+'-'+fmtKey(d);
+          if(!upcoming.find(u=>u.key===key)){
+            upcoming.push({...occ, date:fmtKey(d), key, hijriDay:h.day, hijriMonth:h.month, hijriYear:h.year, daysUntil:i});
+          }
+        }
+      });
+    }
+    return upcoming.slice(0,10);
+  }
+
+  // ── DAILY SUGGESTIONS ──
+  const EVENING_SURAHS = [67,112,113,114]; // Al-Mulk, Al-Ikhlas, Al-Falaq, An-Nas
+  // Ayatul Kursi = surah 2 (Al-Baqarah) - we track it specially
+  const KAHF_NUM = 18;
+
+  function getDailySuggestions(){
+    const suggestions=[];
+    const h=getHijriDetails(today);
+    const hour=new Date().getHours();
+    const isEvening=isEveningTime();
+    const isFri=today.getDay()===5; // Friday check
+    const isWhiteDays=h.day>=13&&h.day<=15;
+    const isDhulHijjah=h.month===12&&h.day>=1&&h.day<=9;
+    const isArafah=h.month===12&&h.day===9;
+    const isAshura=(h.month===1&&(h.day===9||h.day===10));
+    const isMondayOrThursday=today.getDay()===1||today.getDay()===4;
+
+    // Evening recitation (after Maghrib till 1am)
+    if(isEvening){
+      const allReviewed=EVENING_SURAHS.every(n=>{
+        const v=hifzData[n]; 
+        const reviews=typeof v==='object'?v.reviews||[]:[];
+        return reviews.length&&reviews[reviews.length-1].date===todayKey;
+      });
+      suggestions.push({
+        id:'evening-recitation',
+        icon:'🌙',
+        name:'Evening Recitation',
+        desc:'Al-Mulk · Al-Ikhlas · Al-Falaq · An-Nas',
+        done:allReviewed,
+        type:'quran',
+        color:'#3D2060'
+      });
+    }
+
+    // Al-Kahf on Fridays
+    if(isFri){
+      const v=hifzData[KAHF_NUM];
+      const reviews=typeof v==='object'?v.reviews||[]:[];
+      const reviewed=reviews.length&&reviews[reviews.length-1].date===todayKey;
+      suggestions.push({
+        id:'kahf-friday',
+        icon:'📖',
+        name:'Surah Al-Kahf',
+        desc:'Recite every Friday',
+        done:reviewed,
+        type:'quran',
+        color:'#0F6E56'
+      });
+    }
+
+    // Fasting suggestions
+    if(isDhulHijjah||isArafah){
+      suggestions.push({id:'dhulhijjah-fast',icon:'🌙',name:isArafah?'Fast of Arafah':'Dhul Hijjah Fast',desc:isArafah?'9th Dhul Hijjah — most virtuous fast':`Day ${h.day} of Dhul Hijjah`,done:dayData[todayKey]?.fasting||false,type:'fasting',color:'#854F0B'});
+    }
+    if(isWhiteDays&&!isDhulHijjah){
+      suggestions.push({id:'white-days',icon:'🤍',name:'White Days Fast',desc:`${h.day}th of ${toHijri(today).split(' ')[1]}`,done:dayData[todayKey]?.fasting||false,type:'fasting',color:'#5B8DB8'});
+    }
+    if(isAshura){
+      suggestions.push({id:'ashura-fast',icon:'🌙',name:'Fast of Ashura',desc:'9th & 10th of Muharram',done:dayData[todayKey]?.fasting||false,type:'fasting',color:'#854F0B'});
+    }
+    if(isMondayOrThursday&&!isDhulHijjah&&!isWhiteDays&&!isAshura){
+      suggestions.push({id:'mon-thu-fast',icon:'🌙',name:`${today.getDay()===1?'Monday':'Thursday'} Fast`,desc:'Sunnah fasting',done:dayData[todayKey]?.fasting||false,type:'fasting',color:'#5B8DB8'});
+    }
+
+    // Duha suggestion (morning, 9am-12pm)
+    if(hour>=9&&hour<12){
+      suggestions.push({id:'duha',icon:'☀️',name:'Duha Prayer',desc:'Pray between sunrise and noon',done:dayData[todayKey]?.duha||false,type:'prayer',color:'#EF9F27'});
+    }
+
+    return suggestions;
+  }
+
+  async function buildDailySuggestions(){
+    const el=document.getElementById('dailySuggestions');
+    if(!el) return;
+    const suggestions=getDailySuggestions();
+    if(!suggestions.length){ el.style.display='none'; return; }
+    el.style.display='block';
+    el.innerHTML=`<div style="padding:14px 36px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);">Today's Practices</div>
+      <div style="padding:8px 36px 16px;display:flex;flex-direction:column;gap:7px;" id="suggestionsInner"></div>`;
+    const inner=document.getElementById('suggestionsInner');
+    suggestions.forEach(s=>{
+      const card=document.createElement('div');
+      card.style.cssText=`display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r);border:0.5px solid ${s.done?s.color+'44':'var(--border)'};background:${s.done?s.color+'11':'var(--card)'};cursor:pointer;transition:all .2s;`;
+      card.innerHTML=`
+        <span style="font-size:18px;flex-shrink:0;">${s.icon}</span>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:500;color:var(--text);${s.done?'text-decoration:line-through;opacity:.6;':''}">${s.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px;">${s.desc}</div>
+        </div>
+        <div style="width:26px;height:26px;border-radius:50%;border:1.5px solid ${s.done?s.color:'var(--border2)'};background:${s.done?s.color:'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;">
+          ${s.done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
+        </div>`;
+      card.onclick=()=>toggleSuggestion(s);
+      inner.appendChild(card);
+    });
+  }
+
+  async function toggleSuggestion(s){
+    if(s.type==='fasting'){
+      dayData[todayKey]=dayData[todayKey]||{};
+      dayData[todayKey].fasting=!dayData[todayKey].fasting;
+      await saveDayData(todayKey);
+      buildFasting(todayKey); buildStrip(); updateStreak(); updateYearlyStats();
+    } else if(s.type==='quran'){
+      if(s.id==='evening-recitation'){
+        for(const num of EVENING_SURAHS) await logReview(num);
+      } else if(s.id==='kahf-friday'){
+        await logReview(KAHF_NUM);
+      }
+    } else if(s.type==='prayer'&&s.id==='duha'){
+      dayData[todayKey]=dayData[todayKey]||{};
+      dayData[todayKey].duha=!dayData[todayKey].duha;
+      await saveDayData(todayKey);
+    }
+    await buildDailySuggestions();
+  }
+
+  // ── ENHANCED CHALLENGE CREATION ──
+  let chFormV2 = { category:'fasting', subtype:'daily', mode:'soft', days:7, startDate:todayKey, name:'' };
+
+  const CH_CATEGORIES = {
+    fasting: {
+      icon:'🌙', label:'Fasting',
+      subtypes:[
+        {id:'daily',       label:'Fast every day',          desc:'Fast for X consecutive days'},
+        {id:'monThu',      label:'Monday & Thursday',        desc:'Sunnah fasting twice a week'},
+        {id:'dawud',       label:'Fast of Dawud (a.s.)',     desc:'Fast every other day'},
+        {id:'whitedays',   label:'White Days',               desc:'13th, 14th & 15th each month'},
+        {id:'dhulhijjah',  label:'Dhul Hijjah',              desc:'First 9 days of Dhul Hijjah'},
+        {id:'ashura',      label:'Ashura',                   desc:'9th & 10th of Muharram'},
+        {id:'arafah',      label:'Day of Arafah',            desc:'9th of Dhul Hijjah'},
+        {id:'shawwal',     label:'Shawwal 6 Fasts',          desc:'6 voluntary fasts after Ramadan'},
+      ]
+    },
+    prayer: {
+      icon:'🕌', label:'Prayer',
+      subtypes:[
+        {id:'all5',        label:'All 5 prayers',            desc:'Complete all obligatory prayers daily'},
+        {id:'allGolden',   label:'All prayers + Sunnah',     desc:'Fard + Sunnah for all prayers'},
+        {id:'fajr',        label:'Never miss Fajr',          desc:'Pray Fajr every single day'},
+        {id:'juma',        label:"Jumu'ah every Friday",     desc:'Never miss Friday prayer'},
+        {id:'ishraq',      label:'Ishraq',                   desc:'Pray Ishraq after sunrise'},
+        {id:'duha',        label:'Duha',                     desc:'Pray Duha every morning'},
+        {id:'witr',        label:'Witr',                     desc:'Pray Witr every night'},
+        {id:'tahajjud',    label:'Tahajjud',                 desc:'Pray in the last third of the night'},
+      ]
+    },
+    quran: {
+      icon:'📖', label:'Quran',
+      subtypes:[
+        {id:'evening',     label:'Evening Recitation',       desc:'Al-Mulk, Al-Ikhlas, Al-Falaq, An-Nas'},
+        {id:'kahf',        label:'Al-Kahf every Friday',     desc:'Recite Surah Al-Kahf each Friday'},
+        {id:'mulk',        label:'Surah Al-Mulk daily',      desc:'Recite Al-Mulk every evening'},
+        {id:'custom-quran',label:'Custom surah/recitation',  desc:'Define your own Quran practice'},
+      ]
+    },
+    custom: {
+      icon:'✏️', label:'Custom',
+      subtypes:[
+        {id:'custom', label:'Custom challenge', desc:'Define your own goal — mark done/not done daily'}
+      ]
+    }
+  };
+
+  window.openCreateChallenge=()=>{
+    chFormV2={ category:'fasting', subtype:'daily', mode:'soft', days:7, startDate:todayKey, name:'' };
+    buildCreateChallengeUI();
+    document.getElementById('createChallengeSheet').classList.add('open');
+    lockScroll();
+    addDragDismiss(
+      document.querySelector('#createChallengeInner .hifz-handle'),
+      document.getElementById('createChallengeInner'),
+      ()=>{ document.getElementById('createChallengeSheet').classList.remove('open'); unlockScroll(); }
+    );
+  };
+
+  function buildCreateChallengeUI(){
+    const el=document.getElementById('createChallengeInner');
+    el.innerHTML=`
+      <div class="hifz-handle"></div>
+      <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
+        <button onclick="document.getElementById('createChallengeSheet').classList.remove('open');unlockScroll();" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
+      </div>
+      <div style="padding:16px 24px;">
+        <label class="form-label">Category</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;" id="catOptions">
+          ${Object.entries(CH_CATEGORIES).map(([k,v])=>`
+            <button class="form-opt ${k==='fasting'?'selected':''}" onclick="selectCategory('${k}')">${v.icon} ${v.label}</button>
+          `).join('')}
+        </div>
+        <div id="subtypeSection"></div>
+        <label class="form-label">Challenge name</label>
+        <input class="form-input" id="chNameV2" placeholder="e.g. Ramadan prep…"/>
+        <label class="form-label">Mode</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="form-opt selected" id="modeSoft" onclick="selectMode('soft')">🤝 Individual</button>
+          <button class="form-opt" id="modeStrict" onclick="selectMode('strict')">🔥 Group streak</button>
+        </div>
+        <label class="form-label">Start date</label>
+        <input class="form-input" id="chStartDate" type="date" value="${todayKey}" min="${todayKey}"/>
+        <label class="form-label">Duration</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;" id="daysOptions">
+          <button class="form-opt selected" onclick="selectDays(7,this)">7d</button>
+          <button class="form-opt" onclick="selectDays(14,this)">14d</button>
+          <button class="form-opt" onclick="selectDays(30,this)">30d</button>
+          <button class="form-opt" onclick="selectDays(0,this)">Custom</button>
+        </div>
+        <div id="customDaysWrap" style="display:none;margin-top:8px;">
+          <input class="form-input" id="chCustomDays" type="number" placeholder="Number of days" min="1" max="365"/>
+        </div>
+        <button class="form-submit" onclick="submitChallengeV2()">Create & get invite link 🔗</button>
+      </div>`;
+    selectCategory('fasting');
+  }
+
+  window.selectCategory=(cat)=>{
+    chFormV2.category=cat;
+    chFormV2.subtype=CH_CATEGORIES[cat].subtypes[0].id;
+    document.querySelectorAll('#catOptions .form-opt').forEach(b=>{
+      b.classList.toggle('selected', b.getAttribute('onclick').includes(`'${cat}'`));
+    });
+    // Build subtype options
+    const st=document.getElementById('subtypeSection');
+    st.innerHTML=`<label class="form-label">Type</label>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${CH_CATEGORIES[cat].subtypes.map((s,i)=>`
+          <button class="form-opt ${i===0?'selected':''} full" onclick="selectSubtype('${s.id}',this)" style="display:flex;align-items:flex-start;gap:8px;text-align:left;">
+            <div style="flex:1;">
+              <div style="font-weight:500;">${s.label}</div>
+              <div style="font-size:11px;opacity:.7;font-weight:400;margin-top:2px;">${s.desc}</div>
+            </div>
+          </button>`).join('')}
+      </div>`;
+    // Auto-set name
+    document.getElementById('chNameV2').placeholder=CH_CATEGORIES[cat].subtypes[0].label+' Challenge';
+  };
+
+  window.selectSubtype=(id,btn)=>{
+    chFormV2.subtype=id;
+    btn.closest('div').querySelectorAll('.form-opt').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const cat=CH_CATEGORIES[chFormV2.category];
+    const sub=cat.subtypes.find(s=>s.id===id);
+    if(sub) document.getElementById('chNameV2').placeholder=sub.label+' Challenge';
+  };
+
+  window.selectMode=(mode)=>{
+    chFormV2.mode=mode;
+    document.getElementById('modeSoft').classList.toggle('selected',mode==='soft');
+    document.getElementById('modeStrict').classList.toggle('selected',mode==='strict');
+  };
+
+  window.selectDays=(d,btn)=>{
+    chFormV2.days=d;
+    document.querySelectorAll('#daysOptions .form-opt').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('customDaysWrap').style.display=d===0?'block':'none';
+  };
+
+  window.submitChallengeV2=async()=>{
+    let days=chFormV2.days===0?parseInt(document.getElementById('chCustomDays').value)||7:chFormV2.days;
+    const startDate=document.getElementById('chStartDate').value||todayKey;
+    const name=document.getElementById('chNameV2').value.trim()||(CH_CATEGORIES[chFormV2.category].subtypes.find(s=>s.id===chFormV2.subtype)?.label||'Challenge');
+    const endsOn=addDays(startDate,days);
+    const challenge={
+      name, category:chFormV2.category, subtype:chFormV2.subtype,
+      mode:chFormV2.mode, createdBy:currentUser.uid,
+      createdByName:currentUser.displayName||'',
+      createdAt:todayKey, startDate, endsOn, active:true,
+      members:[currentUser.uid],
+      completions:{[currentUser.uid]:{displayName:currentUser.displayName||'',dates:[]}}
+    };
+    try{
+      const ref=doc(collection(db,'challenges'));
+      await setDoc(ref,challenge);
+      document.getElementById('createChallengeSheet').classList.remove('open');
+      unlockScroll();
+      const link=`${window.location.href.split('?')[0]}?challenge=${ref.id}`;
+      await navigator.clipboard.writeText(link).catch(()=>{});
+      alert(`Challenge created! 🎉\n\nInvite link copied:\n${link}\n\nShare it to invite others!`);
+      await buildChallengesList();
+    }catch(e){ alert('Failed to create: '+e.message); }
+  };
+
+  // ── CALENDAR OCCASIONS ──
+  function buildCalOccasions(){
+    const occasions=getUpcomingOccasions();
+    if(!occasions.length) return '';
+    const byDate={};
+    occasions.forEach(o=>{ if(!byDate[o.date]) byDate[o.date]=[]; byDate[o.date].push(o); });
+    return byDate;
+  }
+
+  function getOccasionForDate(dateKey){
+    const h=getHijriDetails(keyToDate(dateKey));
+    return OCCASIONS.filter(occ=>{
+      const matchMonth=occ.hijriMonth===0||occ.hijriMonth===h.month;
+      const matchDay=h.day>=occ.hijriDayStart&&h.day<=occ.hijriDayEnd;
+      return matchMonth&&matchDay;
+    });
+  }
   // ── CHALLENGES ──
   let chForm = { type:'fasting', mode:'soft', days:7 };
   const TEMPLATES = [
