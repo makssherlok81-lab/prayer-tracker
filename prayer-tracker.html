@@ -60,9 +60,9 @@
     #fireWrap { width: 42px; height: 50px; display: flex; align-items: center; justify-content: center; transition: all .4s; flex-shrink: 0; }
     .fast-icon-big { font-size: 26px; flex-shrink: 0; }
     .streak-big { font-size: 28px; font-weight: 500; color: var(--text); }
-    .streak-big.fast { color: var(--violet); }
+    .streak-big.fast { color: var(--text); }
     .streak-unit { font-size: 13px; color: var(--text2); }
-    .streak-unit.fast { color: var(--violet2); }
+    .streak-unit.fast { color: var(--text2); }
     .streak-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
     #prayersArea { background: var(--card); padding: 20px 36px; }
     #prayersList { display: flex; flex-direction: column; gap: 8px; }
@@ -1141,10 +1141,12 @@
       div.style.cssText='padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:7px;';
       const typeColors={fasting:'#854F0B',special:'#D4A017',eid:'#0F6E56'};
       const color=typeColors[occ.type]||'var(--text2)';
+      const durationStr=occ.duration>0?` · ${occ.duration+1} days`:'';
+      const whenStr=occ.daysUntil===0?'Starting today':occ.daysUntil===1?'Starting tomorrow':`In ${occ.daysUntil} days`;
       div.innerHTML=`
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
           <div style="font-size:13px;font-weight:500;color:var(--text);">${occ.name}</div>
-          <div style="font-size:11px;color:${color};font-weight:500;">${occ.daysUntil===0?'Today':occ.daysUntil===1?'Tomorrow':'In '+occ.daysUntil+' days'}</div>
+          <div style="font-size:11px;color:${color};font-weight:500;">${whenStr}${durationStr}</div>
         </div>
         <div style="font-size:11px;color:var(--text2);">${occ.desc}</div>
         ${occ.challenge?`<button onclick="openCreateChallengeFromOccasion('${JSON.stringify(occ.challenge).replace(/'/g,'').replace(/"/g,'&quot;')}')" style="margin-top:7px;background:var(--green);color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;">Start challenge →</button>`:''}`;
@@ -1627,22 +1629,31 @@
 
   function getUpcomingOccasions(){
     const upcoming=[];
-    // Check next 180 days
-    for(let i=0;i<=180;i++){
-      const d=new Date(today); d.setDate(d.getDate()+i);
-      const h=getHijriDetails(d);
-      OCCASIONS.forEach(occ=>{
-        const matchMonth = occ.hijriMonth===0 || occ.hijriMonth===h.month;
-        const matchDay = h.day>=occ.hijriDayStart && h.day<=occ.hijriDayEnd;
-        if(matchMonth && matchDay){
-          const key=occ.name+'-'+fmtKey(d);
-          if(!upcoming.find(u=>u.key===key)){
-            upcoming.push({...occ, date:fmtKey(d), key, hijriDay:h.day, hijriMonth:h.month, hijriYear:h.year, daysUntil:i});
+    // Find the FIRST occurrence of each occasion in next 180 days
+    OCCASIONS.forEach(occ=>{
+      for(let i=0;i<=180;i++){
+        const d=new Date(today); d.setDate(d.getDate()+i);
+        const h=getHijriDetails(d);
+        const matchMonth=occ.hijriMonth===0||occ.hijriMonth===h.month;
+        const matchDay=h.day>=occ.hijriDayStart&&h.day<=occ.hijriDayEnd;
+        if(matchMonth&&matchDay){
+          // Find the start of this occasion period
+          const startDay=new Date(today); startDay.setDate(today.getDate()+i);
+          // Walk back to find the actual start
+          while(true){
+            const prev=new Date(startDay); prev.setDate(prev.getDate()-1);
+            const ph=getHijriDetails(prev);
+            const pMatch=(occ.hijriMonth===0||occ.hijriMonth===ph.month)&&ph.day>=occ.hijriDayStart&&ph.day<=occ.hijriDayEnd&&fmtKey(prev)>=todayKey;
+            if(pMatch) startDay.setDate(startDay.getDate()-1); else break;
           }
+          const daysUntil=Math.round((startDay-today)/86400000);
+          const duration=occ.hijriDayEnd-occ.hijriDayStart;
+          upcoming.push({...occ, date:fmtKey(startDay), daysUntil, duration, hijriMonth:h.month, hijriYear:h.year});
+          break;
         }
-      });
-    }
-    return upcoming.slice(0,10);
+      }
+    });
+    return upcoming.sort((a,b)=>a.daysUntil-b.daysUntil);
   }
 
   // ── DAILY SUGGESTIONS ──
@@ -1722,7 +1733,16 @@
     const el=document.getElementById('dailySuggestions');
     if(!el) return;
     const suggestions=getDailySuggestions();
-    if(!suggestions.length){ el.style.display='none'; return; }
+    if(!suggestions.length){ 
+      el.style.display='none'; 
+      const fa=document.getElementById('fastingArea');
+      if(fa) fa.style.display='block';
+      return; 
+    }
+    const hasFastingSuggestion=suggestions.some(s=>s.type==='fasting');
+    // Hide main fasting card if a fasting suggestion is shown (they control the same data)
+    const fastingArea=document.getElementById('fastingArea');
+    if(fastingArea) fastingArea.style.display=hasFastingSuggestion?'none':'block';
     el.style.display='block';
     el.innerHTML=`<div style="padding:14px 36px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);">Today's Practices</div>
       <div style="padding:8px 36px 16px;display:flex;flex-direction:column;gap:7px;" id="suggestionsInner"></div>`;
@@ -2052,11 +2072,12 @@ Share it to invite others!`);
   };
 
   async function buildChallengesList(){
-    const el=document.getElementById('challengesList'); el.innerHTML='';
+    const el=document.getElementById('challengesList');
+    el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+'<div style="height:80px;background:var(--bg);border-radius:var(--r);animation:pulse 1.5s ease-in-out infinite;"></div>'.repeat(2)+'</div>';
     try{
-      // Get challenges where I'm a member
       const q=query(collection(db,'challenges'),where('members','array-contains',currentUser.uid));
       const snap=await getDocs(q);
+      el.innerHTML='';
       if(snap.empty){
         el.innerHTML=`<div style="text-align:center;padding:32px 16px;">
           <div style="font-size:24px;margin-bottom:10px;">🤝</div>
@@ -2334,14 +2355,13 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
       const friends=myData.friends||[];
       const friendsInfo=myData.friendsInfo||{};
       friendsData={};
-      for(const uid of friends){
+      // Load all friend profiles in parallel
+      await Promise.all(friends.map(async uid=>{
         try{
           const snap=await getDoc(doc(db,'publicProfiles',uid));
-          if(snap.exists()){
-            friendsData[uid]={...snap.data(), addedOn:friendsInfo[uid]?.addedOn||null};
-          }
+          if(snap.exists()) friendsData[uid]={...snap.data(),addedOn:friendsInfo[uid]?.addedOn||null};
         }catch(e){}
-      }
+      }));
     }catch(e){}
   }
 
