@@ -349,6 +349,9 @@
     #loadingScreen.hidden { opacity: 0; pointer-events: none; }
     .loading-logo { width: 80px; height: 80px; animation: pulse 1.8s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.06); opacity: .85; } }
+
+    #challengesSheet.open, #friendsSheet.open, #createChallengeSheet.open, #connectPopup.open { display:flex !important; }
+    #challengesSheet.open #challengesInner, #friendsSheet.open #friendsInner, #createChallengeSheet.open #createChallengeInner { transform:translateY(0); }
   </style>
 </head>
 <body>
@@ -604,6 +607,58 @@
     <div class="confirm-btns">
       <button class="confirm-no" onclick="closeConfirm()">Cancel</button>
       <button class="confirm-yes" id="confirmYesBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHALLENGES SHEET -->
+<div id="challengesSheet" onclick="closeChallengesSheet(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:flex-end;justify-content:center;">
+  <div id="challengesInner" style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);padding:0 0 40px;">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:18px;font-weight:600;color:var(--text);">🤝 Challenges</div>
+      <button onclick="openCreateChallenge()" style="background:var(--green);color:white;border:none;border-radius:20px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;">+ New</button>
+    </div>
+    <div style="padding:16px 24px;" id="challengesList">
+      <div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE CHALLENGE SHEET -->
+<div id="createChallengeSheet" onclick="closeCreateSheet(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:flex-end;justify-content:center;">
+  <div id="createChallengeInner" style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);padding:0 0 40px;">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
+      <button onclick="document.getElementById('createChallengeSheet').classList.remove('open');unlockScroll();" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
+    </div>
+    <div id="createChallengeBody" style="padding:0 24px;"></div>
+  </div>
+</div>
+
+<!-- FRIENDS SHEET -->
+<div id="friendsSheet" onclick="closeFriendsSheet(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:flex-end;justify-content:center;">
+  <div id="friendsInner" style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);padding:0 0 40px;">
+    <div class="hifz-handle"></div>
+    <div style="padding:0 24px 16px;border-bottom:0.5px solid var(--border);">
+      <div style="font-size:18px;font-weight:600;color:var(--text);">👥 Friends</div>
+    </div>
+    <div style="padding:16px 24px;" id="friendsSection">
+      <div style="font-size:12px;color:var(--text2);text-align:center;padding:16px;">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONNECT FRIEND POPUP -->
+<div id="connectPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:600;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--card);border-radius:var(--r);padding:28px 24px;width:320px;max-width:100%;text-align:center;">
+    <div id="connectAvatar" style="width:56px;height:56px;border-radius:50%;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:var(--green);margin:0 auto 12px;">?</div>
+    <div id="connectTitle" style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:6px;">Connect with friend?</div>
+    <div id="connectSub" style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5;">You'll both be able to see each other's stats.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeConnect()" style="flex:1;background:var(--bg);border:0.5px solid var(--border2);border-radius:8px;padding:12px;cursor:pointer;font-size:14px;color:var(--text);font-family:inherit;">Cancel</button>
+      <button onclick="confirmConnect()" style="flex:1;background:var(--green);color:white;border:none;border-radius:8px;padding:12px;cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;">Connect 🤝</button>
     </div>
   </div>
 </div>
