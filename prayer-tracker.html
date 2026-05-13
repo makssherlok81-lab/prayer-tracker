@@ -2005,26 +2005,9 @@
     }
   };
 
-  function buildTemplateList(){
-    const el=document.getElementById('templateList'); el.innerHTML='';
-    TEMPLATES.forEach(t=>{
-      const card=document.createElement('div'); card.className='template-card';
-      card.innerHTML=`<span class="template-icon">${t.icon}</span>
-        <div><div class="template-name">${t.name}</div><div class="template-desc">${t.desc} · ${t.days} days</div></div>`;
-      card.onclick=()=>applyTemplate(t);
-      el.appendChild(card);
-    });
-  }
+  // buildTemplateList removed — UI now built dynamically
 
-  function applyTemplate(t){
-    chForm={type:t.type, mode:t.mode, days:t.days};
-    document.getElementById('chName').value=t.name;
-    // Update UI selections
-    document.querySelectorAll('#chTypeOptions .form-opt').forEach(b=>{
-      b.classList.toggle('selected', b.getAttribute('onclick').includes(t.type));
-    });
-    submitChallenge();
-  }
+  // applyTemplate removed
 
   window.selectChOpt=(field, val, btn)=>{
     chForm[field]=val;
@@ -2412,11 +2395,11 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
   async function buildFriendsSection(){
     const el=document.getElementById('friendsSection');
     if(!el) return;
-    await loadFriendsData();
-    el.innerHTML='';
-
-    // My invite link
+    el.innerHTML='<div style="font-size:12px;color:var(--text2);text-align:center;padding:16px;">Loading…</div>';
     try{
+      await loadFriendsData();
+      el.innerHTML='';
+      // Invite link
       const myDoc=await getDoc(doc(db,'users',currentUser.uid));
       const code=myDoc.exists()?myDoc.data().friendCode:'';
       if(code){
@@ -2431,136 +2414,42 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
           </div>`;
         el.appendChild(linkBox);
       }
-    }catch(e){}
-
-    const uids=Object.keys(friendsData);
-    if(uids.length===0){
-      const empty=document.createElement('div');
-      empty.style.cssText='text-align:center;padding:16px 8px;font-size:12px;color:var(--text2);';
-      empty.textContent='No friends yet. Share your invite link to connect!';
-      el.appendChild(empty);
-      return;
-    }
-
-    uids.forEach(uid=>{
-      const f=friendsData[uid];
-      if(!f) return;
-      const ini=(f.displayName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const card=document.createElement('div'); card.className='friend-card';
-      card.innerHTML=`
-        <div class="friend-card-top">
-          <div class="friend-avatar">${ini}</div>
-          <div>
-            <div class="friend-name">${f.displayName||'Friend'}</div>
-            <div class="friend-since">Member since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
-            <div class="friend-since" style="color:var(--green-mid);">${friendsData[uid]?.addedOn ? 'Friends since '+MONTHS[keyToDate(friendsData[uid].addedOn).getMonth()].slice(0,3)+' '+keyToDate(friendsData[uid].addedOn).getDate()+', '+keyToDate(friendsData[uid].addedOn).getFullYear() : 'Connected ✓'}</div>
+      const uids=Object.keys(friendsData);
+      if(!uids.length){
+        const empty=document.createElement('div');
+        empty.style.cssText='text-align:center;padding:16px 8px;font-size:12px;color:var(--text2);';
+        empty.textContent='No friends yet. Share your invite link to connect!';
+        el.appendChild(empty);
+        return;
+      }
+      uids.forEach(uid=>{
+        const f=friendsData[uid];
+        if(!f) return;
+        const ini=(f.displayName||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        const card=document.createElement('div'); card.className='friend-card';
+        card.innerHTML=`
+          <div class="friend-card-top">
+            <div class="friend-avatar">${ini}</div>
+            <div>
+              <div class="friend-name">${f.displayName||'Friend'}</div>
+              <div class="friend-since">Member since ${f.memberSince?MONTHS[keyToDate(f.memberSince).getMonth()].slice(0,3)+' '+keyToDate(f.memberSince).getFullYear():''}</div>
+              <div class="friend-since" style="color:var(--green-mid);">${friendsData[uid]?.addedOn?'Friends since '+MONTHS[keyToDate(friendsData[uid].addedOn).getMonth()].slice(0,3)+' '+keyToDate(friendsData[uid].addedOn).getDate()+', '+keyToDate(friendsData[uid].addedOn).getFullYear():'Connected ✓'}</div>
+            </div>
           </div>
-        </div>
-        <div class="friend-stats">
-          <div class="friend-stat"><span style="font-size:14px;">🔥</span><div><div class="friend-stat-val">${f.prayerStreak||0}</div><div class="friend-stat-lbl">day streak</div></div></div>
-          <div class="friend-stat"><span style="font-size:14px;">⭐</span><div><div class="friend-stat-val" style="color:#D4A017;">${f.prayerDaysTotal||0}</div><div class="friend-stat-lbl">days prayed</div></div></div>
-          <div class="friend-stat"><span style="font-size:14px;">🌙</span><div><div class="friend-stat-val" style="color:#7B3F9E;">${f.fastDaysTotal||0}</div><div class="friend-stat-lbl">days fasted</div></div></div>
-          <div class="friend-stat"><span style="font-size:14px;">📖</span><div><div class="friend-stat-val" style="color:#4A90D9;">${f.hifzCount||0}/114</div><div class="friend-stat-lbl">memorized</div></div></div>
-        </div>
-        <button class="friend-remove" onclick="removeFriend('${uid}','${(f.displayName||'friend').replace(/'/g,"\'")}')">Remove friend</button>`;
-      el.appendChild(card);
-    });
-  }
-
-  window.copyInviteLink=async(link)=>{
-    try{
-      await navigator.clipboard.writeText(link);
-      alert('Link copied! Share it on WhatsApp or anywhere. 🔗');
+          <div class="friend-stats">
+            <div class="friend-stat"><span style="font-size:14px;">🔥</span><div><div class="friend-stat-val">${f.prayerStreak||0}</div><div class="friend-stat-lbl">day streak</div></div></div>
+            <div class="friend-stat"><span style="font-size:14px;">⭐</span><div><div class="friend-stat-val" style="color:#D4A017;">${f.prayerDaysTotal||0}</div><div class="friend-stat-lbl">days prayed</div></div></div>
+            <div class="friend-stat"><span style="font-size:14px;">🌙</span><div><div class="friend-stat-val">${f.fastDaysTotal||0}</div><div class="friend-stat-lbl">days fasted</div></div></div>
+            <div class="friend-stat"><span style="font-size:14px;">📖</span><div><div class="friend-stat-val" style="color:#4A90D9;">${f.hifzCount||0}/114</div><div class="friend-stat-lbl">memorized</div></div></div>
+          </div>
+          <button class="friend-remove" onclick="removeFriend('${uid}','${(f.displayName||'friend').replace(/'/g,"\'")}')">Remove friend</button>`;
+        el.appendChild(card);
+      });
     }catch(e){
-      // Fallback for older browsers
-      prompt('Copy this link:', link);
+      el.innerHTML='<div style="font-size:12px;color:var(--text2);text-align:center;padding:16px;">Failed to load friends.</div>';
+      console.error('buildFriendsSection error:',e);
     }
-  };
-
-  window.removeFriend=async(uid, name)=>{
-    if(!confirm(`Remove ${name} from your friends?`)) return;
-    try{
-      await setDoc(doc(db,'users',currentUser.uid),{friends:arrayRemove(uid)},{merge:true});
-      delete friendsData[uid];
-      await updatePublicProfile();
-      await buildFriendsSection();
-    }catch(e){ alert('Failed to remove: '+e.message); }
-  };
-
-  // ── MENU ──
-  window.openMenu=()=>{
-    document.getElementById('menuOverlay').style.display='block';
-    const m=document.getElementById('sideMenu'); m.style.display='block';
-    setTimeout(()=>m.style.transform='translateX(0)',10);
-  };
-  window.closeMenu=()=>{
-    const m=document.getElementById('sideMenu'); m.style.transform='translateX(-100%)';
-    setTimeout(()=>{ m.style.display='none'; document.getElementById('menuOverlay').style.display='none'; },350);
-  };
-  window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
-  document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
-
-  // Register service worker for PWA
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('service-worker.js')
-        .then(r=>console.log('SW registered'))
-        .catch(e=>console.log('SW failed:', e));
-    });
   }
 </script>
-
-
-
-<!-- CHALLENGES SHEET -->
-<div id="challengesSheet" onclick="closeChallengesSheet(event)">
-  <div id="challengesInner">
-    <div class="hifz-handle"></div>
-    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:18px;font-weight:600;color:var(--text);">🤝 Challenges</div>
-      <button onclick="openCreateChallenge()" style="background:var(--green);color:white;border:none;border-radius:20px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;">+ New</button>
-    </div>
-    <div style="padding:16px 24px;" id="challengesList">
-      <div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Loading…</div>
-    </div>
-  </div>
-</div>
-
-<!-- CREATE CHALLENGE SHEET -->
-<div id="createChallengeSheet" onclick="closeCreateSheet(event)">
-  <div id="createChallengeInner">
-    <div class="hifz-handle"></div>
-    <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
-      <button onclick="document.getElementById('createChallengeSheet').classList.remove('open');unlockScroll();" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
-    </div>
-    <div id="createChallengeBody" style="padding:0 24px;"></div>
-  </div>
-
-<!-- FRIENDS SHEET -->
-<div id="friendsSheet" onclick="closeFriendsSheet(event)">
-  <div id="friendsInner">
-    <div class="hifz-handle"></div>
-    <div style="padding:0 24px 16px;border-bottom:0.5px solid var(--border);">
-      <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:2px;">👥 Friends</div>
-    </div>
-    <div style="padding:16px 24px;" id="friendsSection">
-      <div style="font-size:12px;color:var(--text2);text-align:center;padding:16px;">Loading…</div>
-    </div>
-  </div>
-</div>
-
-<!-- CONNECT FRIEND POPUP -->
-<div id="connectPopup">
-  <div class="connect-inner">
-    <div class="connect-avatar" id="connectAvatar">?</div>
-    <div class="connect-title" id="connectTitle">Connect with friend?</div>
-    <div class="connect-sub" id="connectSub">You'll both be able to see each other's prayer and fasting stats.</div>
-    <div class="connect-btns">
-      <button class="connect-no" onclick="closeConnect()">Cancel</button>
-      <button class="connect-yes" onclick="confirmConnect()">Connect 🤝</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
