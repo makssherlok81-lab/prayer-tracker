@@ -684,6 +684,11 @@
   let currentUser=null, signupDate=null, dayData={}, sheetDateKey=null, calYear, calMonth;
   let hifzData={};
   let postponeTarget=null, confirmCallback=null;
+
+  // Preloaded cache
+  let cachedChallenges=null;
+  let cachedFriends=null;
+
   let friendsData={}; // uid -> publicProfile
   let pendingConnect=null; // {uid, name, code}
   const today=new Date(), todayKey=fmtKey(today);
@@ -749,6 +754,8 @@
           await processIncomingFriends();
           await checkAddFriendParam();
           await checkChallengeParam();
+          // Preload challenges and friends in background
+          preloadChallengesAndFriends();
         }catch(e){ console.error(e); }
       }, 500);
     } else {
@@ -2073,27 +2080,38 @@ Share it to invite others!`);
 
   async function buildChallengesList(){
     const el=document.getElementById('challengesList');
-    el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+'<div style="height:80px;background:var(--bg);border-radius:var(--r);animation:pulse 1.5s ease-in-out infinite;"></div>'.repeat(2)+'</div>';
+    // Use cache if available, otherwise show skeleton and fetch
+    if(cachedChallenges){
+      el.innerHTML='';
+      renderChallenges(el, cachedChallenges);
+      return;
+    }
+    el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+'<div style="height:80px;background:var(--bg);border-radius:var(--r);opacity:.5;"></div>'.repeat(2)+'</div>';
     try{
       const q=query(collection(db,'challenges'),where('members','array-contains',currentUser.uid));
       const snap=await getDocs(q);
       el.innerHTML='';
-      if(snap.empty){
-        el.innerHTML=`<div style="text-align:center;padding:32px 16px;">
-          <div style="font-size:24px;margin-bottom:10px;">🤝</div>
-          <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px;">No challenges yet</div>
-          <div style="font-size:12px;color:var(--text2);">Create one and invite friends to join!</div>
-        </div>`;
-        return;
-      }
       const challenges=[];
       snap.forEach(d=>challenges.push({id:d.id,...d.data()}));
-      // Sort: active first, then by date
-      challenges.sort((a,b)=>(b.active?1:0)-(a.active?1:0)||(a.endsOn>b.endsOn?1:-1));
-      challenges.forEach(ch=>el.appendChild(buildChallengeCard(ch)));
+      cachedChallenges=challenges;
+      renderChallenges(el, challenges);
+      return;
     }catch(e){
       el.innerHTML=`<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Failed to load. Check your connection.</div>`;
     }
+  }
+
+  function renderChallenges(el, challenges){
+    if(!challenges||!challenges.length){
+      el.innerHTML=`<div style="text-align:center;padding:32px 16px;">
+        <div style="font-size:24px;margin-bottom:10px;">🤝</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px;">No challenges yet</div>
+        <div style="font-size:12px;color:var(--text2);">Create one and invite friends to join!</div>
+      </div>`;
+      return;
+    }
+    challenges.sort((a,b)=>(b.active?1:0)-(a.active?1:0)||(a.endsOn>b.endsOn?1:-1));
+    challenges.forEach(ch=>el.appendChild(buildChallengeCard(ch)));
   }
 
   function buildChallengeCard(ch){
@@ -2158,6 +2176,7 @@ Share it to invite others!`);
 
   window.markChallengeComplete=async(id)=>{
     try{
+      cachedChallenges=null;
       await updateDoc(doc(db,'challenges',id),{
         [`completions.${currentUser.uid}.dates`]:arrayUnion(todayKey),
         [`completions.${currentUser.uid}.displayName`]:currentUser.displayName||''
@@ -2174,7 +2193,7 @@ Share it to invite others!`);
 
   window.endChallenge=async(id)=>{
     if(!confirm('End this challenge for everyone?')) return;
-    try{ await updateDoc(doc(db,'challenges',id),{active:false}); await buildChallengesList(); }
+    try{ cachedChallenges=null; await updateDoc(doc(db,'challenges',id),{active:false}); await buildChallengesList(); }
     catch(e){ alert('Failed: '+e.message); }
   };
 
@@ -2348,20 +2367,44 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     }catch(e){ console.error('processIncomingFriends',e); }
   }
 
+
+  async function preloadChallengesAndFriends(){
+    try{
+      // Preload challenges
+      const q=query(collection(db,'challenges'),where('members','array-contains',currentUser.uid));
+      const snap=await getDocs(q);
+      cachedChallenges=[];
+      snap.forEach(d=>cachedChallenges.push({id:d.id,...d.data()}));
+      // Preload friends
+      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const myData=myDoc.exists()?myDoc.data():{};
+      const friends=myData.friends||[];
+      const friendsInfo=myData.friendsInfo||{};
+      cachedFriends={};
+      await Promise.all(friends.map(async uid=>{
+        try{
+          const snap=await getDoc(doc(db,'publicProfiles',uid));
+          if(snap.exists()) cachedFriends[uid]={...snap.data(),addedOn:friendsInfo[uid]?.addedOn||null};
+        }catch(e){}
+      }));
+    }catch(e){}
+  }
   async function loadFriendsData(){
+    // Use cache if available
+    if(cachedFriends){ friendsData=cachedFriends; return; }
     try{
       const myDoc=await getDoc(doc(db,'users',currentUser.uid));
       const myData=myDoc.exists()?myDoc.data():{};
       const friends=myData.friends||[];
       const friendsInfo=myData.friendsInfo||{};
       friendsData={};
-      // Load all friend profiles in parallel
       await Promise.all(friends.map(async uid=>{
         try{
           const snap=await getDoc(doc(db,'publicProfiles',uid));
           if(snap.exists()) friendsData[uid]={...snap.data(),addedOn:friendsInfo[uid]?.addedOn||null};
         }catch(e){}
       }));
+      cachedFriends=friendsData;
     }catch(e){}
   }
 
