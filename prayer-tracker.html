@@ -2450,6 +2450,45 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
       console.error('buildFriendsSection error:',e);
     }
   }
+  // ── MENU ──
+  window.openMenu=()=>{
+    document.getElementById('menuOverlay').style.display='block';
+    const m=document.getElementById('sideMenu'); m.style.display='block';
+    setTimeout(()=>m.style.transform='translateX(0)',10);
+  };
+  window.closeMenu=()=>{
+    const m=document.getElementById('sideMenu'); m.style.transform='translateX(-100%)';
+    setTimeout(()=>{ m.style.display='none'; document.getElementById('menuOverlay').style.display='none'; },350);
+  };
+  window.toggleUserMenu=()=>document.getElementById('userMenu').classList.toggle('open');
+  document.addEventListener('click',(e)=>{ const m=document.getElementById('userMenu'); if(m.classList.contains('open')&&!m.contains(e.target)) m.classList.remove('open'); });
+
+  // ── COPY INVITE LINK ──
+  window.copyInviteLink=async(link)=>{
+    try{ await navigator.clipboard.writeText(link); alert('Link copied! Share it on WhatsApp or anywhere. 🔗'); }
+    catch(e){ prompt('Copy this link:',link); }
+  };
+
+  // ── REMOVE FRIEND ──
+  window.removeFriend=async(uid,name)=>{
+    if(!confirm('Remove '+name+' from your friends?')) return;
+    try{
+      await setDoc(doc(db,'users',currentUser.uid),{friends:arrayRemove(uid)},{merge:true});
+      delete friendsData[uid];
+      cachedFriends=null;
+      await updatePublicProfile();
+      await buildFriendsSection();
+    }catch(e){ alert('Failed to remove: '+e.message); }
+  };
+
+  // Register service worker for PWA
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{
+      navigator.serviceWorker.register('service-worker.js')
+        .then(r=>console.log('SW registered'))
+        .catch(e=>console.log('SW failed:',e));
+    });
+  }
 </script>
 </body>
 </html>
