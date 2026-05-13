@@ -2057,7 +2057,11 @@ Share it to invite others!`);
     el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+'<div style="height:80px;background:var(--bg);border-radius:var(--r);opacity:.5;"></div>'.repeat(2)+'</div>';
     try{
       const q=query(collection(db,'challenges'),where('members','array-contains',currentUser.uid));
-      const snap=await getDocs(q);
+      // Add 8 second timeout
+      const snap=await Promise.race([
+        getDocs(q),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout')),8000))
+      ]);
       el.innerHTML='';
       const challenges=[];
       snap.forEach(d=>challenges.push({id:d.id,...d.data()}));
@@ -2065,7 +2069,8 @@ Share it to invite others!`);
       renderChallenges(el, challenges);
       return;
     }catch(e){
-      el.innerHTML=`<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Failed to load. Check your connection.</div>`;
+      el.innerHTML=`<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2);">Could not load challenges (${e.message}). Check your connection and Firestore rules.</div>`;
+      console.error('challenges error:',e);
     }
   }
 
@@ -2358,10 +2363,12 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     }catch(e){}
   }
   async function loadFriendsData(){
-    // Use cache if available
     if(cachedFriends){ friendsData=cachedFriends; return; }
     try{
-      const myDoc=await getDoc(doc(db,'users',currentUser.uid));
+      const myDoc=await Promise.race([
+        getDoc(doc(db,'users',currentUser.uid)),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout')),8000))
+      ]);
       const myData=myDoc.exists()?myDoc.data():{};
       const friends=myData.friends||[];
       const friendsInfo=myData.friendsInfo||{};
@@ -2370,10 +2377,10 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
         try{
           const snap=await getDoc(doc(db,'publicProfiles',uid));
           if(snap.exists()) friendsData[uid]={...snap.data(),addedOn:friendsInfo[uid]?.addedOn||null};
-        }catch(e){}
+        }catch(e){ console.error('friend load error:',e); }
       }));
       cachedFriends=friendsData;
-    }catch(e){}
+    }catch(e){ console.error('loadFriendsData error:',e); }
   }
 
   window.openFriends=async()=>{
