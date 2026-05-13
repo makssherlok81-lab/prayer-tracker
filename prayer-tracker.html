@@ -1851,14 +1851,8 @@
   };
 
   function buildCreateChallengeUI(){
-    const el=document.getElementById('createChallengeInner');
-    el.innerHTML=`
-      <div class="hifz-handle"></div>
-      <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
-        <button onclick="document.getElementById('createChallengeSheet').classList.remove('open');unlockScroll();" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
-      </div>
-      <div style="padding:16px 24px;">
+    const el=document.getElementById('createChallengeBody');
+    el.innerHTML=`<div style="padding-top:16px;">
         <label class="form-label">Category</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;" id="catOptions">
           ${Object.entries(CH_CATEGORIES).map(([k,v])=>`
@@ -1886,7 +1880,7 @@
           <input class="form-input" id="chCustomDays" type="number" placeholder="Number of days" min="1" max="365"/>
         </div>
         <button class="form-submit" onclick="submitChallengeV2()">Create & get invite link 🔗</button>
-      </div>`;
+    </div>`;
     selectCategory('fasting');
   }
 
@@ -2004,16 +1998,7 @@
     }
   };
 
-  window.openCreateChallenge=()=>{
-    buildTemplateList();
-    document.getElementById('createChallengeSheet').classList.add('open');
-    lockScroll();
-    addDragDismiss(
-      document.querySelector('#createChallengeInner .hifz-handle'),
-      document.getElementById('createChallengeInner'),
-      ()=>{ document.getElementById('createChallengeSheet').classList.remove('open'); unlockScroll(); }
-    );
-  };
+  // openCreateChallenge defined above;
   window.closeCreateSheet=(e)=>{
     if(e.target===document.getElementById('createChallengeSheet')){
       document.getElementById('createChallengeSheet').classList.remove('open'); unlockScroll();
@@ -2547,40 +2532,10 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     <div class="hifz-handle"></div>
     <div style="padding:0 24px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:18px;font-weight:600;color:var(--text);">New Challenge</div>
-      <button onclick="closeCreateSheet({target:document.getElementById('createChallengeSheet')})" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
+      <button onclick="document.getElementById('createChallengeSheet').classList.remove('open');unlockScroll();" style="background:none;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Cancel</button>
     </div>
-    <div style="padding:0 24px;">
-      <div style="margin-top:14px;margin-bottom:8px;font-size:13px;font-weight:500;color:var(--text2);">Quick start with a template</div>
-      <div id="templateList"></div>
-      <div style="text-align:center;margin:12px 0;font-size:11px;color:var(--text2);">— or create custom —</div>
-      <label class="form-label">Challenge name</label>
-      <input class="form-input" id="chName" placeholder="e.g. Ramadan prep with the crew"/>
-      <label class="form-label">Type</label>
-      <div class="form-options" id="chTypeOptions">
-        <button class="form-opt selected" onclick="selectChOpt('type','fasting',this)">🌙 Fasting</button>
-        <button class="form-opt" onclick="selectChOpt('type','prayers',this)">🕌 All 5 prayers</button>
-        <button class="form-opt" onclick="selectChOpt('type','duha',this)">🤲 Duha</button>
-        <button class="form-opt" onclick="selectChOpt('type','witr',this)">✨ Witr</button>
-      </div>
-      <label class="form-label">Mode</label>
-      <div class="form-options">
-        <button class="form-opt selected" onclick="selectChOpt('mode','soft',this)">🤝 Soft — individual</button>
-        <button class="form-opt" onclick="selectChOpt('mode','strict',this)">🔥 Strict — group streak</button>
-      </div>
-      <label class="form-label">Duration</label>
-      <div class="form-options">
-        <button class="form-opt selected" onclick="selectChOpt('days',7,this)">7 days</button>
-        <button class="form-opt" onclick="selectChOpt('days',14,this)">14 days</button>
-        <button class="form-opt" onclick="selectChOpt('days',30,this)">30 days</button>
-        <button class="form-opt" onclick="selectChOpt('days',0,this)">Custom…</button>
-      </div>
-      <div id="customDaysWrap" style="display:none;margin-top:8px;">
-        <input class="form-input" id="chCustomDays" type="number" placeholder="Number of days" min="1" max="365"/>
-      </div>
-      <button class="form-submit" onclick="submitChallenge()">Create & get invite link 🔗</button>
-    </div>
+    <div id="createChallengeBody" style="padding:0 24px;"></div>
   </div>
-</div>
 
 <!-- FRIENDS SHEET -->
 <div id="friendsSheet" onclick="closeFriendsSheet(event)">
