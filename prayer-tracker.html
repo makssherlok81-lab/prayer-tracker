@@ -1182,7 +1182,7 @@
   }
 
   // ── LOTTIE FIRE ──
-  const FIRE_STAGES=[null,'Simple_Flame.json','Flame_-_Streak.json','Fire.json','Flame_animation.json','BIGFire.json'];
+  const FIRE_STAGES=[null,'Simple_Flame.json','Flame_-_Streak.json','Flame_animation.json','Fire.json','BIGFire.json'];
   let currentFireStage=-1, fireAnim=null;
 
   function updateFireAnim(celebrate=false){
@@ -1207,32 +1207,25 @@
 
   function triggerFireCelebration(){
     const fw=document.getElementById('fireWrap');
-    const sn=document.getElementById('streakNum');
-    if(!fw||!sn||typeof lottie==='undefined') return;
-    const from=fw.getBoundingClientRect(), to=sn.getBoundingClientRect();
+    if(!fw||typeof lottie==='undefined') return;
+    const rect=fw.getBoundingClientRect();
     const overlay=document.getElementById('celebrationOverlay');
-    const flyEl=document.getElementById('flyingFire');
     const expEl=document.getElementById('explosionAnim');
-    if(!overlay||!flyEl||!expEl) return;
+    if(!overlay||!expEl) return;
+
+    // Explosion on the flame
     overlay.classList.add('active');
-    flyEl.innerHTML='';
-    flyEl.style.cssText=`position:absolute;width:80px;height:80px;left:${from.left+from.width/2-40}px;top:${from.top+from.height/2-40}px;opacity:1;transition:none;`;
-    let flyAnim;
-    try{ flyAnim=lottie.loadAnimation({container:flyEl,renderer:'svg',loop:false,autoplay:true,path:'Dancing_fire.json'}); }catch(e){}
-    setTimeout(()=>{
-      flyEl.style.cssText=`position:absolute;width:80px;height:80px;left:${to.left+to.width/2-40}px;top:${to.top+to.height/2-40}px;opacity:1;transition:left .65s cubic-bezier(.4,0,.2,1),top .65s cubic-bezier(.4,0,.2,1);`;
-    },50);
-    setTimeout(()=>{
-      flyEl.style.opacity='0';
-      if(flyAnim) try{flyAnim.destroy();}catch(e){}
-      expEl.innerHTML='';
-      expEl.style.cssText=`position:absolute;width:140px;height:140px;left:${to.left+to.width/2}px;top:${to.top+to.height/2}px;opacity:1;transform:translate(-50%,-50%);`;
-      let expAnim;
-      try{
-        expAnim=lottie.loadAnimation({container:expEl,renderer:'svg',loop:false,autoplay:true,path:'Explosion_Red_Particles.json'});
-        expAnim.addEventListener('complete',()=>{ try{expAnim.destroy();}catch(e){} expEl.style.opacity='0'; overlay.classList.remove('active'); });
-      }catch(e){ overlay.classList.remove('active'); }
-    },750);
+    expEl.innerHTML='';
+    expEl.style.cssText=`position:absolute;width:160px;height:160px;left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;opacity:1;transform:translate(-50%,-50%);`;
+    let expAnim;
+    try{
+      expAnim=lottie.loadAnimation({container:expEl,renderer:'svg',loop:false,autoplay:true,path:'Explosion_Red_Particles.json'});
+      expAnim.addEventListener('complete',()=>{ try{expAnim.destroy();}catch(e){} expEl.style.opacity='0'; overlay.classList.remove('active'); });
+    }catch(e){ overlay.classList.remove('active'); }
+
+    // Golden glow on prayers area
+    const pa=document.getElementById('prayersArea');
+    if(pa){ pa.classList.remove('all-done-glow'); void pa.offsetWidth; pa.classList.add('all-done-glow'); }
   }
 
   function updateAvatarRing(){
