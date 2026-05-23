@@ -414,6 +414,75 @@
       #bottomBar { background: var(--bg); }
       .hifz-bar-bg { background: rgba(255,255,255,0.1); }
     }
+
+    /* ── REFINED ANIMATIONS ── */
+
+    /* Prayer check button — satisfying bounce on tap */
+    @keyframes checkPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.22); }
+      70%  { transform: scale(0.92); }
+      100% { transform: scale(1); }
+    }
+    .chk-pop { animation: checkPop .3s cubic-bezier(.36,.07,.19,.97); }
+
+    /* Streak number — gentle count-up pulse */
+    @keyframes streakPulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    .streak-pulse { animation: streakPulse .4s cubic-bezier(.36,.07,.19,.97); }
+
+    /* All prayers done — soft golden glow on prayers area */
+    @keyframes allDoneGlow {
+      0%   { box-shadow: 0 0 0 0 rgba(212,160,23,0); }
+      50%  { box-shadow: 0 0 0 8px rgba(212,160,23,0.15); }
+      100% { box-shadow: 0 0 0 0 rgba(212,160,23,0); }
+    }
+    .all-done-glow { animation: allDoneGlow .8s ease-out; }
+
+    /* Fasting card — smooth gradient fade */
+    #fastingCard { transition: background .4s ease, border-color .4s ease; }
+
+    /* Daily suggestions — fade in */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .suggestion-card-anim { animation: fadeSlideIn .3s ease forwards; }
+
+    /* Sheet backdrop blur */
+    #sheetOverlay, #hifzSheet, #challengesSheet, #friendsSheet, #createChallengeSheet {
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    /* Avatar ring — pulse when memorized count changes */
+    @keyframes ringPulse {
+      0%   { transform: rotate(-90deg) scale(1); }
+      50%  { transform: rotate(-90deg) scale(1.15); }
+      100% { transform: rotate(-90deg) scale(1); }
+    }
+    .ring-pulse { animation: ringPulse .5s cubic-bezier(.36,.07,.19,.97); }
+
+    /* Surah row — highlight when state changes */
+    @keyframes rowFlash {
+      0%   { background: transparent; }
+      40%  { background: rgba(212,160,23,0.15); }
+      100% { background: transparent; }
+    }
+    .surah-flash { animation: rowFlash .5s ease; }
+
+    /* Streak row numbers — smooth transition */
+    .streak-big { transition: color .3s ease; }
+
+    /* Strip circles — smooth transitions already, just enhance */
+    .strip-num { transition: all .25s cubic-bezier(.36,.07,.19,.97); }
+
+    /* Prayer cards — slightly springier transition */
+    .prayer-card { transition: background .25s ease, border-color .25s ease, transform .15s ease; }
+    .prayer-card:active { transform: scale(0.99); }
   </style>
 </head>
 <body>
@@ -964,12 +1033,24 @@
 
   window.cycleState=async(e,dateKey,prayerId,maxStates)=>{
     e.stopPropagation();
+    // Bounce animation on the button
+    const btn=e.currentTarget;
+    btn.classList.remove('chk-pop');
+    void btn.offsetWidth;
+    btn.classList.add('chk-pop');
     if(!dayData[dateKey]) dayData[dateKey]={};
     const cur=dayData[dateKey][prayerId]||0;
-    dayData[dateKey][prayerId]=cur>=maxStates?0:cur+1;
+    const newState=cur>=maxStates?0:cur+1;
+    dayData[dateKey][prayerId]=newState;
     await saveDayData(dateKey);
+    const wasAllDone=allPrayersDone(dateKey);
     if(dateKey===todayKey){ buildPrayers(dateKey); updateBottom(dateKey); updateFireAnim(); }
     else buildSheetPrayers(dateKey);
+    // Golden glow if just completed all prayers
+    if(dateKey===todayKey && wasAllDone){
+      const pa=document.getElementById('prayersArea');
+      if(pa){ pa.classList.remove('all-done-glow'); void pa.offsetWidth; pa.classList.add('all-done-glow'); }
+    }
     updateStreak(); buildStrip(); updateYearlyStats();
     setTimeout(syncChallengeCompletions, 500);
   };
@@ -1017,7 +1098,12 @@
       else{ missedInARow++; if(missedInARow>=2) break; }
       d.setDate(d.getDate()-1);
     }
+    const prevStreak=parseInt(document.getElementById('streakNum').textContent)||0;
     document.getElementById('streakNum').textContent=streak;
+    if(streak>prevStreak){
+      const el=document.getElementById('streakNum');
+      el.classList.remove('streak-pulse'); void el.offsetWidth; el.classList.add('streak-pulse');
+    }
     document.getElementById('streakSub').textContent=streak===0?'Start today!':streak===1?'Great start!':`${streak} days strong — keep going!`;
 
     function hijriMonth(date){
@@ -1094,7 +1180,15 @@
     const mem=Object.values(hifzData).filter(v=>getHS(v)===2).length;
     const circ=2*Math.PI*16, offset=circ*(1-mem/114);
     const ring=document.getElementById('avatarRing');
-    if(ring){ ring.style.strokeDasharray=circ; ring.style.strokeDashoffset=offset; }
+    if(ring){
+      const prevOffset=parseFloat(ring.style.strokeDashoffset)||circ;
+      ring.style.strokeDasharray=circ; ring.style.strokeDashoffset=offset;
+      // Pulse if memorized count increased
+      if(offset<prevOffset){
+        const svg=ring.closest('.avatar-ring-svg');
+        if(svg){ svg.classList.remove('ring-pulse'); void svg.offsetWidth; svg.classList.add('ring-pulse'); }
+      }
+    }
   }
 
   // ── DAY SHEET ──
@@ -1264,6 +1358,16 @@
     document.getElementById('calModal').classList.add('open');
   };
 
+
+  function hasActiveChallengeOfType(subtype){
+    if(!cachedChallenges) return false;
+    return cachedChallenges.some(ch =>
+      ch.active &&
+      ch.subtype === subtype &&
+      ch.members?.includes(currentUser?.uid) &&
+      todayKey <= ch.endsOn
+    );
+  }
   function buildOccasionsSection(){
     const el=document.getElementById('occasionsSection'); if(!el) return;
     const upcoming=getUpcomingOccasions();
@@ -1282,7 +1386,7 @@
           <div style="font-size:11px;color:${color};font-weight:500;">${whenStr}${durationStr}</div>
         </div>
         <div style="font-size:11px;color:var(--text2);">${occ.desc}</div>
-        ${occ.challenge?`<button onclick="openCreateChallengeFromOccasion('${JSON.stringify(occ.challenge).replace(/'/g,'').replace(/"/g,'&quot;')}')" style="margin-top:7px;background:var(--green);color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;">Start challenge →</button>`:''}`;
+        ${occ.challenge&&!hasActiveChallengeOfType(occ.challenge.subtype)?`<button onclick="openCreateChallengeFromOccasion('${JSON.stringify(occ.challenge).replace(/'/g,'').replace(/"/g,'&quot;')}')" style="margin-top:7px;background:var(--green);color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;">Start challenge →</button>`:occ.challenge?`<div style="margin-top:7px;font-size:11px;color:var(--green);">✓ Challenge started</div>`:''}`;
       el.appendChild(div);
     });
   }
@@ -1473,8 +1577,8 @@
           <div style="font-size:10px;color:${s.daysOverdue>0?'#C0392B':'#4A90D9'};">${s.daysOverdue>0?s.daysOverdue+'d overdue':'Due today'}</div>
         </div>
         <div style="display:flex;gap:4px;margin-left:6px;">
-          <button onclick="openPostpone(${s.num},'${s.name}')" style="font-size:10px;color:var(--text2);background:var(--bg);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;cursor:pointer;font-family:inherit;">…</button>
-          <button onclick="logReview(${s.num})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${reviewedToday?'#4A90D9':'var(--border2)'};background:${reviewedToday?'#4A90D9':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;">
+          <button onclick="openPostpone(${s.num},'${s.name}')" style="font-size:10px;color:var(--text);background:var(--bg);border:0.5px solid var(--border2);border-radius:4px;padding:3px 5px;cursor:pointer;font-family:inherit;">…</button>
+          <button onclick="logReview(${s.num})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${reviewedToday?'#4A90D9':'var(--border2)'};background:${reviewedToday?'#4A90D9':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text);">
             ${reviewedToday?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'↻'}
           </button>
         </div>`;
@@ -1560,7 +1664,7 @@
 
         const stateLabels=['Not started','Learning','Memorized'];
         const row=document.createElement('div'); row.className=rowClass;
-        row.onclick=()=>tapSurahRow(num, nameEn, state);
+        row.onclick=()=>tapSurahRow(num, nameEn, state, row);
         row.innerHTML=`
           <span class="surah-num">${num}</span>
           <div class="surah-info">
@@ -1620,7 +1724,7 @@
     el.appendChild(sec);
   }
 
-  window.tapSurahRow=async(num, name, currentState)=>{
+  window.tapSurahRow=async(num, name, currentState, rowEl)=>{
     if(currentState===2){
       // Already memorized — show confirm before resetting
       showConfirm(`Reset "${name}" to Not started? The memorization date will be cleared but your review history is kept.`, async()=>{
@@ -1634,6 +1738,8 @@
       const existing=typeof hifzData[num]==='object'?hifzData[num]:{};
       hifzData[num]={ ...existing, s:next, memorizedOn:next===2?todayKey:(existing.memorizedOn||null) };
       await saveHifzData(); buildHifzSheet();
+      // Flash the row
+      if(rowEl){ rowEl.classList.remove('surah-flash'); void rowEl.offsetWidth; rowEl.classList.add('surah-flash'); }
     setTimeout(syncChallengeCompletions, 500);
     }
   };
@@ -1913,6 +2019,8 @@
     suggestions.forEach(s=>{
       const card=document.createElement('div');
       card.style.cssText=`display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r);border:0.5px solid ${s.done?s.color+'44':'var(--border)'};background:${s.done?s.color+'11':'var(--card)'};cursor:pointer;transition:all .2s;`;
+      card.classList.add('suggestion-card-anim');
+      card.style.animationDelay=`${suggestions.indexOf(s)*60}ms`;
       card.innerHTML=`
         <span style="font-size:18px;flex-shrink:0;">${s.icon}</span>
         <div style="flex:1;">
