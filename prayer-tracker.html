@@ -1181,27 +1181,58 @@
     document.getElementById('menuStatHifz').textContent=memCount+' / 114';
   }
 
-  function flameSVG(w,h,o,i){ return `<svg width="${w}" height="${h}" viewBox="0 0 40 56" fill="none"><path d="M20 4 C12 14 7 24 7 32 C7 43 13 52 20 52 C27 52 33 43 33 32 C33 24 28 14 20 4 Z" fill="${o}"/><path d="M20 22 C17 27 14 32 14 37 C14 41.5 16.5 46 20 46 C23.5 46 26 41.5 26 37 C26 32 23 27 20 22 Z" fill="${i}"/></svg>`; }
-  function lanternSVG(){ return `<svg width="44" height="58" viewBox="0 0 46 62" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="23" y1="1" x2="23" y2="8" stroke="#854F0B" stroke-width="2" stroke-linecap="round"/>
-    <rect x="13" y="8" width="20" height="6" rx="3" fill="#854F0B"/>
-    <rect x="9" y="14" width="28" height="34" rx="5" fill="#FAEEDA"/>
-    <line x1="9" y1="14" x2="9" y2="48" stroke="#854F0B" stroke-width="2"/>
-    <line x1="37" y1="14" x2="37" y2="48" stroke="#854F0B" stroke-width="2"/>
-    <path d="M9 14 L5 20 L5 42 L9 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <path d="M37 14 L41 20 L41 42 L37 48" stroke="#854F0B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <g class="flame-outer">
-      <path d="M23 26 C23 26 19 31 19 35 C19 38 20.8 41 23 41 C25.2 41 27 38 27 35 C27 31 23 26 23 26 Z" fill="#EF9F27"/>
-    </g>
-    <g class="flame-inner">
-      <path d="M23 33 C23 33 21 35 21 37 C21 38.2 21.9 39 23 39 C24.1 39 25 38.2 25 37 C25 35 23 33 23 33 Z" fill="#FAC775"/>
-    </g>
-    <rect x="13" y="48" width="20" height="6" rx="3" fill="#854F0B"/>
-  </svg>`; }
-  function updateFireAnim(){
+  // ── LOTTIE FIRE ──
+  const FIRE_STAGES=[null,'Simple_Flame.json','Flame_-_Streak.json','Fire.json','Flame_animation.json','BIGFire.json'];
+  let currentFireStage=-1, fireAnim=null;
+
+  function updateFireAnim(celebrate=false){
     const cnt=prayerCount(todayKey);
-    const s=[()=>flameSVG(16,22,'#2C2C2A','#444441'),()=>flameSVG(20,28,'#BA7517','#FAC775'),()=>flameSVG(24,34,'#993C1D','#EF9F27'),()=>flameSVG(30,42,'#BA7517','#FAC775'),()=>flameSVG(36,50,'#854F0B','#EF9F27'),()=>lanternSVG()];
-    document.getElementById('fireWrap').innerHTML=s[Math.min(cnt,5)]();
+    if(cnt===currentFireStage) return;
+    const prev=currentFireStage;
+    currentFireStage=cnt;
+    const wrap=document.getElementById('fireWrap');
+    if(!wrap) return;
+    if(fireAnim){ try{fireAnim.destroy();}catch(e){} fireAnim=null; }
+    if(cnt===0){ wrap.innerHTML=''; return; }
+    wrap.innerHTML='<div id="lottieFire" style="width:50px;height:50px;"></div>';
+    try{
+      fireAnim=lottie.loadAnimation({
+        container:document.getElementById('lottieFire'),
+        renderer:'svg', loop:true, autoplay:true,
+        path:FIRE_STAGES[Math.min(cnt,5)]
+      });
+    }catch(e){ console.error('Lottie error:',e); }
+    if(cnt===5&&prev===4&&celebrate) triggerFireCelebration();
+  }
+
+  function triggerFireCelebration(){
+    const fw=document.getElementById('fireWrap');
+    const sn=document.getElementById('streakNum');
+    if(!fw||!sn||typeof lottie==='undefined') return;
+    const from=fw.getBoundingClientRect(), to=sn.getBoundingClientRect();
+    const overlay=document.getElementById('celebrationOverlay');
+    const flyEl=document.getElementById('flyingFire');
+    const expEl=document.getElementById('explosionAnim');
+    if(!overlay||!flyEl||!expEl) return;
+    overlay.classList.add('active');
+    flyEl.innerHTML='';
+    flyEl.style.cssText=`position:absolute;width:80px;height:80px;left:${from.left+from.width/2-40}px;top:${from.top+from.height/2-40}px;opacity:1;transition:none;`;
+    let flyAnim;
+    try{ flyAnim=lottie.loadAnimation({container:flyEl,renderer:'svg',loop:false,autoplay:true,path:'Dancing_fire.json'}); }catch(e){}
+    setTimeout(()=>{
+      flyEl.style.cssText=`position:absolute;width:80px;height:80px;left:${to.left+to.width/2-40}px;top:${to.top+to.height/2-40}px;opacity:1;transition:left .65s cubic-bezier(.4,0,.2,1),top .65s cubic-bezier(.4,0,.2,1);`;
+    },50);
+    setTimeout(()=>{
+      flyEl.style.opacity='0';
+      if(flyAnim) try{flyAnim.destroy();}catch(e){}
+      expEl.innerHTML='';
+      expEl.style.cssText=`position:absolute;width:140px;height:140px;left:${to.left+to.width/2}px;top:${to.top+to.height/2}px;opacity:1;transform:translate(-50%,-50%);`;
+      let expAnim;
+      try{
+        expAnim=lottie.loadAnimation({container:expEl,renderer:'svg',loop:false,autoplay:true,path:'Explosion_Red_Particles.json'});
+        expAnim.addEventListener('complete',()=>{ try{expAnim.destroy();}catch(e){} expEl.style.opacity='0'; overlay.classList.remove('active'); });
+      }catch(e){ overlay.classList.remove('active'); }
+    },750);
   }
 
   function updateAvatarRing(){
