@@ -368,6 +368,52 @@
     #createChallengeInner { max-height:92vh; }
     #connectPopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:600; align-items:center; justify-content:center; padding:20px; }
     #connectPopup.open { display:flex; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0f0e;
+        --card: #1c1c1a;
+        --text: #f0efe8;
+        --text2: #8a8a84;
+        --border: rgba(255,255,255,0.08);
+        --border2: rgba(255,255,255,0.14);
+        --green-pale: rgba(15,110,86,0.2);
+        --blue-pale: rgba(74,144,217,0.15);
+        --red-pale: rgba(192,57,43,0.15);
+      }
+      body { background: var(--bg); }
+      #hdr { background: #0d5c47; }
+      .prayer-card { background: var(--card); }
+      .prayer-card[data-state="1"] { background: rgba(29,158,117,0.12); }
+      .prayer-card[data-state="1"][data-max="1"] { background: rgba(212,160,23,0.12); }
+      .prayer-card[data-state="2"] { background: rgba(212,160,23,0.12); }
+      #fastingCard { background: var(--card); border-color: var(--border2); }
+      #fastingCard.fasting-on { background: linear-gradient(135deg, #2a1545, #7a3550); }
+      .google-btn { background: #2a2a28; border-color: var(--border2); color: var(--text); }
+      #userMenu { background: var(--card); }
+      #sideMenu { background: var(--card); }
+      .hifz-progress-wrap { background: rgba(255,255,255,0.05); }
+      .friend-card { background: rgba(255,255,255,0.04); }
+      .invite-link-box { background: rgba(255,255,255,0.05); border-color: var(--border2); }
+      .ch-card { background: rgba(255,255,255,0.04); border-color: var(--border); }
+      .form-input { background: rgba(255,255,255,0.07); color: var(--text); }
+      .form-opt { background: rgba(255,255,255,0.06); color: var(--text); }
+      .form-opt.selected { background: rgba(15,110,86,0.25); }
+      .template-card { background: rgba(255,255,255,0.06); }
+      .postpone-inner, .confirm-inner { background: var(--card); }
+      .postpone-opt { background: rgba(255,255,255,0.07); color: var(--text); }
+      #calInner { background: var(--card); }
+      .cal-cell:hover:not(.future):not(.before-signup) { background: rgba(255,255,255,0.08); }
+      .cal-cell.partial { background: rgba(239,159,39,0.25); color: #d4a017; }
+      .due-postpone-btn { background: rgba(255,255,255,0.08); color: var(--text2); }
+      .surah-row:hover { background: rgba(255,255,255,0.04); }
+      .surah-row.learning { background: rgba(29,158,117,0.1); }
+      .surah-row.memorized { background: rgba(212,160,23,0.1); }
+      .review-day-item { background: rgba(255,255,255,0.06); }
+      .strip-num.today { border-color: rgba(255,255,255,0.4); }
+      #bottomBar { background: var(--bg); }
+      .hifz-bar-bg { background: rgba(255,255,255,0.1); }
+    }
   </style>
 </head>
 <body>
