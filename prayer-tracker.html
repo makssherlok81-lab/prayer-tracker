@@ -1976,11 +1976,46 @@
     return 6*60+30; // fallback 6:30am
   }
 
+  function getFajrMinutes(){
+    if(userLat!==null && userLng!==null){
+      const times=calcPrayerTimes(userLat,userLng,today);
+      return decToTime(times.fajr);
+    }
+    return 4*60+30; // fallback 4:30am
+  }
+
+  function getDhuhrMinutes(){
+    if(userLat!==null && userLng!==null){
+      const times=calcPrayerTimes(userLat,userLng,today);
+      return decToTime(times.dhuhr);
+    }
+    return 13*60; // fallback 1pm
+  }
+
   function isIshraqTime(){
     const now=new Date();
     const mins=now.getHours()*60+now.getMinutes();
     const sunrise=getSunriseMinutes();
-    return mins>=sunrise+20 && mins<9*60;
+    // Ishraq: 15-20 min after sunrise until about 45 min after sunrise
+    return mins>=sunrise+15 && mins<=sunrise+45;
+  }
+
+  function isDuhaTime(){
+    const now=new Date();
+    const mins=now.getHours()*60+now.getMinutes();
+    const sunrise=getSunriseMinutes();
+    const dhuhr=getDhuhrMinutes();
+    // Duha: starts 45 min after sunrise, ends 20 min before Dhuhr
+    return mins>sunrise+45 && mins<dhuhr-20;
+  }
+
+  function isTahajjudTime(){
+    const now=new Date();
+    const mins=now.getHours()*60+now.getMinutes();
+    const fajr=getFajrMinutes();
+    // Tahajjud: last third of night — roughly midnight until 30 min before Fajr
+    // Handle midnight crossing: after midnight (0) or before fajr-30
+    return mins>=0 && mins<fajr-30;
   }
 
   function isEveningTime(){
@@ -2099,13 +2134,18 @@
       suggestions.push({id:'mon-thu-fast',icon:'🌙',name:`${today.getDay()===1?'Monday':'Thursday'} Fast`,desc:'Sunnah fasting',done:dayData[todayKey]?.fasting||false,type:'fasting',color:'#5B8DB8'});
     }
 
-    // Ishraq suggestion (sunrise+20min to 9am)
+    // Tahajjud suggestion (midnight until 30 min before Fajr)
+    if(isTahajjudTime()){
+      suggestions.push({id:'tahajjud',icon:'🌌',name:'Tahajjud Prayer',desc:'Night prayer — the last third of the night',done:dayData[todayKey]?.tahajjud||false,type:'prayer',color:'#3D2060'});
+    }
+
+    // Ishraq suggestion (15-45 min after sunrise)
     if(isIshraqTime()){
       suggestions.push({id:'ishraq',icon:'🌅',name:'Ishraq Prayer',desc:'Pray shortly after sunrise',done:dayData[todayKey]?.ishraq||false,type:'prayer',color:'#EF9F27'});
     }
 
-    // Duha suggestion (morning, 9am-12pm)
-    if(hour>=9&&hour<12){
+    // Duha suggestion (45 min after sunrise until 20 min before Dhuhr)
+    if(isDuhaTime()){
       suggestions.push({id:'duha',icon:'☀️',name:'Duha Prayer',desc:'Pray between sunrise and noon',done:dayData[todayKey]?.duha||false,type:'prayer',color:'#EF9F27'});
     }
 
