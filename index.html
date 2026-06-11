@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prayer Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #0F6E56;
+      --green2:  #0A5241;
+      --amber:   #EF9F27;
+      --cream:   #F9F6F0;
+      --ink:     #1A1A1A;
+      --ink2:    #555;
+      --border:  rgba(0,0,0,0.08);
+      --card:    #fff;
+      --r: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px 80px;
+      text-align: center;
+      position: relative;
+      background: var(--green);
+      overflow: hidden;
+    }
+
+    /* Subtle geometric pattern - mashrabiya-inspired */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 50%, rgba(239,159,39,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.04) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .hero-pattern {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M30 0l8.66 15H21.34L30 0zm0 60l-8.66-15h17.32L30 60zM0 30l15-8.66v17.32L0 30zm60 0l-15 8.66V21.34L60 30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .hero-content { position: relative; z-index: 1; max-width: 560px; }
+
+    .app-icon {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      margin: 0 auto 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    .hero-eyebrow {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-family: 'Lora', serif;
+      font-size: clamp(38px, 8vw, 64px);
+      font-weight: 600;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 40px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--amber);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 16px 32px;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(239,159,39,0.35);
+    }
+
+    .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(239,159,39,0.4); }
+    .hero-cta:active { transform: translateY(0); }
+
+    .hero-install-hint {
+      margin-top: 16px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .hero-install-hint a {
+      color: rgba(255,255,255,0.6);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,0.35);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── FEATURES ── */
+    .section {
+      padding: 80px 24px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Lora', serif;
+      font-size: clamp(26px, 5vw, 36px);
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 48px;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border-radius: var(--r);
+      padding: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      border: 1px solid var(--border);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      background: var(--cream);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feature-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink2);
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 48px;
+      height: 3px;
+      background: var(--amber);
+      border-radius: 2px;
+      margin: 0 auto;
+    }
+
+    /* ── INSTALL ── */
+    .install-section {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 80px 24px;
+    }
+
+    .install-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .install-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .install-tab {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .install-tab.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+
+    .install-steps { display: none; }
+    .install-steps.active { display: flex; flex-direction: column; gap: 16px; }
+
+    .install-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+
+    .step-text strong { font-weight: 600; }
+    .step-text em { font-style: normal; color: var(--green); font-weight: 500; }
+
+    /* ── FOOTER CTA ── */
+    .footer-cta {
+      padding: 80px 24px;
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .footer-cta .hero-title {
+      color: var(--ink);
+      font-size: clamp(28px, 5vw, 42px);
+      margin-bottom: 16px;
+    }
+
+    .footer-cta p {
+      font-size: 15px;
+      color: var(--ink2);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .cta-green {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 16px 32px;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(15,110,86,0.25);
+    }
+
+    .cta-green:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(15,110,86,0.3); }
+
+    footer {
+      padding: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--ink2);
+      border-top: 1px solid var(--border);
+      opacity: 0.6;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-indicator { animation: none; }
+      .hero-cta, .cta-green { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-pattern"></div>
+  <div class="hero-content">
+    <img src="icon-192.png" alt="Prayer Tracker icon" class="app-icon"/>
+    <div class="hero-eyebrow">بسم الله الرحمن الرحيم</div>
+    <h1 class="hero-title">Prayer<br/><em>Tracker</em></h1>
+    <p class="hero-sub">A personal Islamic tracker for prayers, fasting and Hifz — built for daily use, designed to keep you consistent.</p>
+    <a href="prayer-tracker.html" class="hero-cta">
+      <span>Open the app</span>
+      <span>→</span>
+    </a>
+    <p class="hero-install-hint">First time? <a onclick="document.getElementById('install').scrollIntoView({behavior:'smooth'})">Learn how to install it on your phone</a></p>
+  </div>
+  <div class="scroll-indicator">
+    <span>Discover</span>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<div class="section">
+  <div class="section-label">What's inside</div>
+  <h2 class="section-title">Everything in one place</h2>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">🕌</div>
+      <div>
+        <div class="feature-name">Five daily prayers</div>
+        <div class="feature-desc">Log each prayer with a single tap. Track fard and sunnah separately, with Friday Jumu'ah handled automatically.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌙</div>
+      <div>
+        <div class="feature-name">Fasting tracker</div>
+        <div class="feature-desc">Mark fasting days and build streaks across Ramadan, Mondays and Thursdays, White Days, and more.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📖</div>
+      <div>
+        <div class="feature-name">Hifz review</div>
+        <div class="feature-desc">Keep your memorisation fresh with a spaced-repetition review system built around your own Hifz progress.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔔</div>
+      <div>
+        <div class="feature-name">Dhuhr reminder</div>
+        <div class="feature-desc">Get a notification after Dhuhr each day — calculated for your location — so you never forget to log.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div>
+        <div class="feature-name">Islamic occasions</div>
+        <div class="feature-desc">Reminders for Day of Arafah, Ashura, White Days, and Eid — 3 days in advance and the day before.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👥</div>
+      <div>
+        <div class="feature-name">Friends & challenges</div>
+        <div class="feature-desc">Share streaks and start fasting or prayer challenges with friends and family.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- INSTALL -->
+<div class="install-section" id="install">
+  <div class="install-inner">
+    <div class="section-label">Add to your phone</div>
+    <h2 class="section-title" style="margin-bottom:24px;">Install in seconds —<br/>no App Store needed</h2>
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:32px;line-height:1.6;">Prayer Tracker installs directly from your browser like a native app. Pick your phone:</p>
+
+    <div class="install-tabs">
+      <button class="install-tab active" onclick="switchTab('iphone', this)">🍎 iOS</button>
+      <button class="install-tab" onclick="switchTab('android', this)">🤖 Android</button>
+    </div>
+
+    <div class="install-steps active" id="steps-iphone">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Open this page in <strong>Safari</strong> (not Chrome or another browser)</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Tap the <em>Share</em> button — the box with an arrow pointing up at the bottom of the screen</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Scroll down and tap <em>Add to Home Screen</em></div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">4</div>
+        <div class="step-text">Tap <em>Add</em> in the top right — the app icon will appear on your home screen</div>
+      </div>
+    </div>
+
+    <div class="install-steps" id="steps-android">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Open this page in <strong>Chrome</strong></div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Tap the <em>three dots</em> menu in the top right corner</div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Tap <em>Add to Home screen</em> or <em>Install app</em></div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">4</div>
+        <div class="step-text">Tap <em>Install</em> — the app icon will appear on your home screen</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER CTA -->
+<div class="footer-cta">
+  <h2 class="hero-title" style="color:var(--ink);font-size:clamp(28px,5vw,42px);margin-bottom:16px;">Ready to start?</h2>
+  <p>Sign in with Google and your data syncs across all your devices automatically.</p>
+  <a href="prayer-tracker.html" class="cta-green">Open Prayer Tracker →</a>
+</div>
+
+<footer>
+  Prayer Tracker · A personal project · Built with ♥
+</footer>
+
+<script>
+  function switchTab(platform, btn) {
+    document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.install-steps').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('steps-' + platform).classList.add('active');
+  }
+</script>
+</body>
+</html>
