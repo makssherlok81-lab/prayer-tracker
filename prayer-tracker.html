@@ -2892,7 +2892,7 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
       const myDoc=await getDoc(doc(db,'users',currentUser.uid));
       const code=myDoc.exists()?myDoc.data().friendCode:'';
       if(code){
-        const baseUrl=window.location.href.split('?')[0];
+        const baseUrl=window.location.href.split('?')[0].replace('prayer-tracker.html','index.html');
         const link=`${baseUrl}?addFriend=${code}`;
         const linkBox=document.createElement('div'); linkBox.className='invite-link-box';
         linkBox.innerHTML=`

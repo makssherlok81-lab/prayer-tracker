@@ -358,6 +358,56 @@
       opacity: 0.6;
     }
 
+    /* ── INVITE BANNER ── */
+    .invite-banner {
+      display: none;
+      background: var(--amber);
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .invite-banner.visible { display: block; }
+
+    .invite-banner-inner {
+      max-width: 560px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .invite-banner-title {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .invite-banner-sub {
+      font-size: 13px;
+      color: var(--ink);
+      opacity: 0.75;
+      line-height: 1.5;
+    }
+
+    .invite-banner-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: transform 0.15s;
+    }
+
+    .invite-banner-btn:hover { transform: translateY(-1px); }
+
     @media (prefers-reduced-motion: reduce) {
       .scroll-indicator { animation: none; }
       .hero-cta, .cta-green { transition: none; }
@@ -365,6 +415,15 @@
   </style>
 </head>
 <body>
+
+<!-- INVITE BANNER (shown when ?addFriend= param is present) -->
+<div class="invite-banner" id="inviteBanner">
+  <div class="invite-banner-inner">
+    <div class="invite-banner-title">🤝 You've been invited!</div>
+    <div class="invite-banner-sub" id="inviteBannerSub">Your friend invited you to Prayer Tracker — open the app to connect.</div>
+    <a href="prayer-tracker.html" id="inviteBannerBtn" class="invite-banner-btn">Open app & connect →</a>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -490,6 +549,18 @@
   </div>
 </div>
 
+<!-- SHARE SECTION -->
+<div style="padding:80px 24px;max-width:680px;margin:0 auto;text-align:center;">
+  <div class="section-label" style="text-align:center;">Spread the word</div>
+  <h2 class="section-title" style="text-align:center;margin-bottom:16px;">Know someone who'd benefit?</h2>
+  <p style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:32px;max-width:440px;margin-left:auto;margin-right:auto;">Share this page with friends or family — once they're in, you can connect, share streaks, and start challenges together from the Friends section inside the app.</p>
+  <button onclick="shareApp()" style="display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--border);border-radius:50px;padding:14px 28px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:all 0.15s;" id="shareBtn">
+    🔗 Copy invite link
+  </button>
+</div>
+
+<div class="divider"></div>
+
 <!-- FOOTER CTA -->
 <div class="footer-cta">
   <h2 class="hero-title" style="color:var(--ink);font-size:clamp(28px,5vw,42px);margin-bottom:16px;">Ready to start?</h2>
@@ -502,6 +573,44 @@
 </footer>
 
 <script>
+  // Handle ?addFriend= invite parameter
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const friendCode = params.get('addFriend');
+    const challengeCode = params.get('challenge');
+    const code = friendCode || challengeCode;
+    if(code){
+      const banner = document.getElementById('inviteBanner');
+      const btn = document.getElementById('inviteBannerBtn');
+      const sub = document.getElementById('inviteBannerSub');
+      banner.classList.add('visible');
+      // Pass the parameter through to the app
+      const param = friendCode ? 'addFriend' : 'challenge';
+      btn.href = `prayer-tracker.html?${param}=${code}`;
+      if(challengeCode){
+        sub.textContent = "Your friend invited you to join a challenge — open the app to accept.";
+      }
+      // Scroll to top so banner is visible
+      window.scrollTo(0, 0);
+    }
+  })();
+
+  function shareApp() {
+    const url = window.location.href.split('?')[0];
+    if(navigator.share){
+      navigator.share({ title: 'Prayer Tracker', text: 'Track your daily prayers, fasting and Hifz', url });
+    } else {
+      navigator.clipboard.writeText(url).then(()=>{
+        const btn = document.getElementById('shareBtn');
+        btn.textContent = '✓ Link copied!';
+        btn.style.background = 'var(--green)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--green)';
+        setTimeout(()=>{ btn.innerHTML = '🔗 Copy invite link'; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 2500);
+      });
+    }
+  }
+
   function switchTab(platform, btn) {
     document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.install-steps').forEach(s => s.classList.remove('active'));
