@@ -350,7 +350,8 @@
     .loading-logo { width: 80px; height: 80px; animation: pulse 1.8s ease-in-out infinite; }
     @keyframes pulse { 0%,100%{ transform: scale(1); opacity: 1; } 50%{ transform: scale(1.06); opacity: .85; } }
 
-    #challengesSheet.open, #friendsSheet.open, #createChallengeSheet.open, #connectPopup.open { display:flex !important; }
+    #challengesSheet.open, #friendsSheet.open, #createChallengeSheet.open, #connectPopup.open, #settingsSheet.open { display:flex !important; }
+    #settingsSheet.open #settingsInner { transform:translateY(0) !important; }
     #challengesSheet.open #challengesInner, #friendsSheet.open #friendsInner, #createChallengeSheet.open #createChallengeInner { transform:translateY(0) !important; }
 
     #challengesSheet, #friendsSheet, #createChallengeSheet {
@@ -675,6 +676,52 @@
     <button onclick="closeMenu();openFriends();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">View friends →</button>
   </div>
 
+  <div style="margin:16px 24px;height:0.5px;background:var(--border);"></div>
+  <div style="padding:0 24px 8px;">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:14px;">⚙️ Settings</div>
+    <button onclick="closeMenu();openSettings();" style="width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;text-align:left;">App settings →</button>
+  </div>
+
+</div>
+
+<!-- SETTINGS SHEET -->
+<div id="settingsSheet" onclick="closeSettings(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:flex-end;justify-content:center;">
+  <div id="settingsInner" style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);padding:0 0 40px;">
+    <div style="width:44px;height:5px;background:var(--border2);border-radius:3px;margin:14px auto 0;padding:10px 30px;background-clip:content-box;cursor:grab;"></div>
+    <div style="padding:16px 28px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:17px;font-weight:600;color:var(--text);">⚙️ Settings</div>
+      <button onclick="document.getElementById('settingsSheet').classList.remove('open');unlockScroll();" style="background:transparent;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Close</button>
+    </div>
+
+    <!-- Location -->
+    <div style="padding:20px 28px 4px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:4px;">📍 Location</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5;">Used to suggest Ishraq &amp; Duha prayers at the right times. Your location is saved on this device only — not shared with anyone.</div>
+      <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);" id="settingsLocStatus">Checking…</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;" id="settingsLocSub"></div>
+        </div>
+        <button id="settingsLocBtn" onclick="settingsRequestLocation();" style="background:var(--green);color:white;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;">Enable</button>
+      </div>
+    </div>
+
+    <div style="margin:20px 28px;height:0.5px;background:var(--border);"></div>
+
+    <!-- Notifications -->
+    <div style="padding:0 28px 4px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:4px;">🔔 Prayer Reminders</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5;">A notification after Dhuhr each day asking if you've logged your prayers. Works even when the app is closed.</div>
+      <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);" id="settingsNotifStatus">Checking…</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;" id="settingsNotifSub"></div>
+        </div>
+        <button id="settingsNotifBtn" onclick="settingsToggleNotifications();" style="background:var(--green);color:white;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;">Enable</button>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- USER MENU -->
@@ -825,6 +872,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-messaging.js";
 
   const app = initializeApp({
     apiKey: "AIzaSyBspu-SKYW74XWEqEL0-L4pFA_gEwgcvhs",
@@ -835,6 +883,8 @@
     appId: "1:66232408397:web:2601743c8f222cc88fff04"
   });
   const auth = getAuth(app), db = getFirestore(app), provider = new GoogleAuthProvider();
+  const messaging = getMessaging(app);
+  const VAPID_KEY = "BAsW-xNayPsHUUQ1SeMGk5saOPhAS4UcBXkQppSQbjBYx8RwfJXQ7TysQkvqG9FP82fDNzygKo4sqqpWqC52X68";
 
   const PRAYERS = [
     { id:'fajr',name:'Fajr',arabic:'الفجر',hasSunnah:true },
@@ -980,6 +1030,8 @@
           await checkChallengeParam();
           // Preload challenges and friends in background
           preloadChallengesAndFriends();
+          // Re-register FCM token if notifications already granted
+          if(Notification.permission==='granted') registerFCMToken(user.uid);
         }catch(e){ console.error(e); }
       }, 500);
     } else {
@@ -1008,7 +1060,7 @@
     buildStrip(); buildPrayers(todayKey); buildFasting(todayKey);
     updateBottom(todayKey); updateStreak(); updateYearlyStats(); updateFireAnim(false); updateAvatarRing();
     buildDailySuggestions();
-    getUserLocation().then(()=>buildDailySuggestions());
+    getUserLocation(false).then(()=>buildDailySuggestions()); // silent — never prompts
     setTimeout(syncChallengeCompletions, 2000);
   }
 
@@ -1873,7 +1925,7 @@
     return h*60+m; // returns minutes since midnight
   }
 
-  async function getUserLocation(){
+  async function getUserLocation(askPermission=false){
     // Use cached location from localStorage (valid for 24 hours)
     try{
       const cached=localStorage.getItem('userLocation');
@@ -1882,6 +1934,16 @@
         if(Date.now()-ts < 24*60*60*1000){
           userLat=lat; userLng=lng; return {lat,lng};
         }
+      }
+    }catch(e){}
+    // Check if permission is already granted — only prompt if askPermission=true
+    try{
+      if(navigator.permissions){
+        const status=await navigator.permissions.query({name:'geolocation'});
+        if(status.state==='denied'){ return null; }
+        if(status.state==='prompt' && !askPermission){ return null; }
+      } else if(!askPermission){
+        return null;
       }
     }catch(e){}
     return new Promise(resolve=>{
@@ -2877,6 +2939,171 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
       console.error('buildFriendsSection error:',e);
     }
   }
+  // ── NOTIFICATIONS ──
+  const NOTIF_SENDER_ID = "66232408397";
+
+  async function registerFCMToken(uid){
+    try{
+      const sw = await navigator.serviceWorker.ready;
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
+      if(token){
+        // Save token + location + timezone to Firestore so Cloud Function can use it
+        const loc = JSON.parse(localStorage.getItem('userLocation')||'null');
+        await setDoc(doc(db,'fcmTokens',uid), {
+          token,
+          uid,
+          lat: loc ? loc.lat : null,
+          lng: loc ? loc.lng : null,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          updatedAt: Date.now()
+        }, {merge:true});
+        localStorage.setItem('fcmToken', token);
+        return token;
+      }
+    }catch(e){ console.warn('FCM token error:', e); }
+    return null;
+  }
+
+  async function getNotifPermissionState(){
+    if(!('Notification' in window)) return 'unsupported';
+    return Notification.permission; // 'default', 'granted', 'denied'
+  }
+
+  window.settingsToggleNotifications = async () => {
+    const state = await getNotifPermissionState();
+    if(state === 'unsupported'){
+      alert('Push notifications are not supported in this browser.');
+      return;
+    }
+    if(state === 'denied'){
+      // Can't re-ask — user must go to browser settings
+      updateSettingsNotifUI('denied');
+      return;
+    }
+    if(state === 'granted'){
+      // Already granted — unsubscribe (remove token from Firestore)
+      const uid = auth.currentUser?.uid;
+      if(uid){
+        try{ await setDoc(doc(db,'fcmTokens',uid),{token:null, updatedAt:Date.now()},{merge:true}); }catch(e){}
+      }
+      localStorage.removeItem('fcmToken');
+      updateSettingsNotifUI('default');
+      return;
+    }
+    // state === 'default' — request permission
+    const result = await Notification.requestPermission();
+    if(result === 'granted'){
+      const uid = auth.currentUser?.uid;
+      if(uid) await registerFCMToken(uid);
+      updateSettingsNotifUI('granted');
+    } else {
+      updateSettingsNotifUI('denied');
+    }
+  };
+
+  function updateSettingsNotifUI(state){
+    const status = document.getElementById('settingsNotifStatus');
+    const sub    = document.getElementById('settingsNotifSub');
+    const btn    = document.getElementById('settingsNotifBtn');
+    if(!status) return;
+    if(state === 'granted'){
+      status.textContent = 'Reminders enabled ✓';
+      status.style.color = 'var(--green)';
+      sub.textContent = "You'll get a reminder after Dhuhr each day.";
+      btn.textContent = 'Turn off';
+      btn.style.background = 'var(--bg)';
+      btn.style.color = 'var(--text2)';
+      btn.style.border = '0.5px solid var(--border2)';
+    } else if(state === 'denied'){
+      status.textContent = 'Notifications blocked';
+      status.style.color = 'var(--red)';
+      sub.textContent = 'Allow notifications for this site in your browser settings, then come back here.';
+      btn.textContent = 'Blocked';
+      btn.style.background = 'var(--bg)';
+      btn.style.color = 'var(--text2)';
+      btn.style.border = '0.5px solid var(--border2)';
+      btn.disabled = true;
+    } else if(state === 'unsupported'){
+      status.textContent = 'Not supported';
+      status.style.color = 'var(--text2)';
+      sub.textContent = 'Your browser does not support push notifications.';
+      btn.style.display = 'none';
+    } else {
+      status.textContent = 'Not enabled';
+      status.style.color = 'var(--text2)';
+      sub.textContent = 'Get a reminder after Dhuhr each day to log your prayers.';
+      btn.textContent = 'Enable';
+      btn.style.background = 'var(--green)';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  // Handle foreground notifications (app is open)
+  onMessage(messaging, payload => {
+    const { title, body } = payload.notification || {};
+    if(title) new Notification(title, { body, icon: '/prayer-tracker/icon-192.png' });
+  });
+
+  // ── SETTINGS ──
+  function updateSettingsLocationUI(){
+    const status=document.getElementById('settingsLocStatus');
+    const sub=document.getElementById('settingsLocSub');
+    const btn=document.getElementById('settingsLocBtn');
+    if(!status) return;
+    const cached=localStorage.getItem('userLocation');
+    if(cached){
+      try{
+        const {lat,lng,ts}=JSON.parse(cached);
+        const hrs=Math.round((Date.now()-ts)/3600000);
+        status.textContent='Location saved ✓';
+        status.style.color='var(--green)';
+        sub.textContent=`${lat.toFixed(3)}, ${lng.toFixed(3)} · saved ${hrs<1?'just now':hrs+'h ago'} · refreshes after 24h`;
+        if(btn){ btn.textContent='Refresh'; btn.style.background='var(--bg)'; btn.style.color='var(--text2)'; btn.style.border='0.5px solid var(--border2)'; }
+      }catch(e){}
+    } else {
+      status.textContent='Not enabled';
+      status.style.color='var(--text2)';
+      sub.textContent='Tap Enable to allow prayer time suggestions based on your location.';
+      if(btn){ btn.textContent='Enable'; btn.style.background='var(--green)'; btn.style.color='white'; btn.style.border='none'; }
+    }
+  }
+  window.settingsRequestLocation=async()=>{
+    const btn=document.getElementById('settingsLocBtn');
+    const status=document.getElementById('settingsLocStatus');
+    if(btn){ btn.textContent='Requesting…'; btn.disabled=true; }
+    if(status){ status.textContent='Waiting for permission…'; status.style.color='var(--text2)'; }
+    localStorage.removeItem('userLocation');
+    const loc=await getUserLocation(true);
+    if(btn) btn.disabled=false;
+    if(loc){
+      buildDailySuggestions();
+      updateSettingsLocationUI();
+    } else {
+      if(status){ status.textContent='Could not get location'; status.style.color='var(--red)'; }
+      const sub=document.getElementById('settingsLocSub');
+      if(sub) sub.textContent='Check that location permission is allowed for this site in your browser settings.';
+      if(btn){ btn.textContent='Try again'; btn.style.background='var(--green)'; btn.style.color='white'; btn.style.border='none'; }
+    }
+  };
+  window.openSettings=async()=>{
+    lockScroll();
+    const s=document.getElementById('settingsSheet');
+    s.style.display='flex';
+    setTimeout(()=>{ s.classList.add('open'); document.getElementById('settingsInner').style.transform='translateY(0)'; },10);
+    updateSettingsLocationUI();
+    const notifState = await getNotifPermissionState();
+    updateSettingsNotifUI(notifState);
+  };
+  window.closeSettings=(e)=>{
+    if(e && e.target!==document.getElementById('settingsSheet')) return;
+    document.getElementById('settingsSheet').classList.remove('open');
+    document.getElementById('settingsInner').style.transform='translateY(100%)';
+    setTimeout(()=>{ document.getElementById('settingsSheet').style.display='none'; },350);
+    unlockScroll();
+  };
+
   // ── MENU ──
   window.openMenu=()=>{
     document.getElementById('menuOverlay').style.display='block';
