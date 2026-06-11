@@ -3047,7 +3047,17 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
   });
 
   // ── SETTINGS ──
-  function updateSettingsLocationUI(){
+  async function getCityName(lat, lng){
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+        headers: { 'User-Agent': 'PrayerTrackerApp/1.0' }
+      });
+      const data = await res.json();
+      return data.address?.city || data.address?.town || data.address?.village || null;
+    }catch(e){ return null; }
+  }
+
+  async function updateSettingsLocationUI(){
     const status=document.getElementById('settingsLocStatus');
     const sub=document.getElementById('settingsLocSub');
     const btn=document.getElementById('settingsLocBtn');
@@ -3059,8 +3069,11 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
         const hrs=Math.round((Date.now()-ts)/3600000);
         status.textContent='Location saved ✓';
         status.style.color='var(--green)';
-        sub.textContent=`${lat.toFixed(3)}, ${lng.toFixed(3)} · saved ${hrs<1?'just now':hrs+'h ago'} · refreshes after 24h`;
+        sub.textContent='Looking up city…';
         if(btn){ btn.textContent='Refresh'; btn.style.background='var(--bg)'; btn.style.color='var(--text2)'; btn.style.border='0.5px solid var(--border2)'; }
+        const city = await getCityName(lat, lng);
+        const locationLabel = city ? city : `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+        sub.textContent=`${locationLabel} · saved ${hrs<1?'just now':hrs+'h ago'}`;
       }catch(e){}
     } else {
       status.textContent='Not enabled';
@@ -3079,7 +3092,13 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     if(btn) btn.disabled=false;
     if(loc){
       buildDailySuggestions();
-      updateSettingsLocationUI();
+      await updateSettingsLocationUI();
+      // Also update city in Firestore token doc so Cloud Function has it
+      const uid=auth.currentUser?.uid;
+      if(uid){
+        const city=await getCityName(loc.lat, loc.lng);
+        try{ await setDoc(doc(db,'fcmTokens',uid),{lat:loc.lat,lng:loc.lng,city:city||null,updatedAt:Date.now()},{merge:true}); }catch(e){}
+      }
     } else {
       if(status){ status.textContent='Could not get location'; status.style.color='var(--red)'; }
       const sub=document.getElementById('settingsLocSub');
