@@ -690,7 +690,7 @@
     <div style="width:44px;height:5px;background:var(--border2);border-radius:3px;margin:14px auto 0;padding:10px 30px;background-clip:content-box;cursor:grab;"></div>
     <div style="padding:16px 28px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:17px;font-weight:600;color:var(--text);">⚙️ Settings</div>
-      <button onclick="document.getElementById('settingsSheet').classList.remove('open');unlockScroll();" style="background:transparent;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Close</button>
+      <button onclick="closeSettingsFully()" style="background:transparent;border:0.5px solid var(--border2);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit;">Close</button>
     </div>
 
     <!-- Location -->
@@ -1093,9 +1093,15 @@
     const data=dayData[dateKey]||{}, friday=isFriday(dateKey), useJuma=friday&&!data.useDhuhrOnFriday;
     let prayers=[...PRAYERS];
     if(useJuma) prayers=prayers.map(p=>p.id==='dhuhr'?{id:'juma',name:"Jumu'ah",arabic:'الجمعة',hasSunnah:true,isJuma:true}:p);
+    let times=null;
+    if(userLat!==null && userLng!==null){
+      try{ times=calcPrayerTimes(userLat,userLng,keyToDate(dateKey)); }catch(e){ times=null; }
+    }
     prayers.forEach(p=>{
       const state=data[p.id]||0, maxStates=p.hasSunnah?2:1;
       const stateLabels=['','Fard prayed','Fard + Sunnah'];
+      const timeKey=(p.id==='juma')?'dhuhr':p.id;
+      const timeStr=times&&times[timeKey]!==undefined?formatClockTime(times[timeKey]):null;
       const card=document.createElement('div'); card.className='prayer-card'; card.dataset.state=state; card.dataset.max=maxStates;
       card.innerHTML=`<div class="prayer-info">
         <div class="prayer-name">${p.name}</div>
@@ -1103,6 +1109,7 @@
         <div class="prayer-state">${state===0?'':(maxStates===1&&state===1?'Prayed ✓':stateLabels[state])}</div>
         ${p.isJuma&&dateKey===todayKey?`<button class="friday-switch" onclick="switchFridayDhuhr(event,'${dateKey}')">Couldn't attend — use Dhuhr</button>`:''}
       </div>
+      ${timeStr?`<div style="font-size:15px;font-weight:600;color:var(--text);margin-right:12px;font-variant-numeric:tabular-nums;">${timeStr}</div>`:''}
       <button class="chk" data-state="${state}" data-max="${maxStates}" onclick="cycleState(event,'${dateKey}','${p.id}',${maxStates})">${checkIcon(state,maxStates)}</button>`;
       list.appendChild(card);
     });
@@ -1923,6 +1930,13 @@
   function decToTime(dec){ 
     const h=Math.floor(dec)%24, m=Math.floor((dec%1)*60);
     return h*60+m; // returns minutes since midnight
+  }
+
+  function formatClockTime(decHours){
+    let h=((Math.floor(decHours)%24)+24)%24;
+    let m=Math.floor((decHours%1)*60);
+    if(m<0) m+=60;
+    return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
   }
 
   async function getUserLocation(askPermission=false){
@@ -3176,6 +3190,11 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     const userWantsOn = localStorage.getItem('notifsEnabled') === 'true';
     const notifState = (rawState==='granted' && !userWantsOn) ? 'default' : rawState;
     updateSettingsNotifUI(notifState);
+  };
+  window.closeSettingsFully=()=>{
+    document.getElementById('settingsSheet').classList.remove('open');
+    unlockScroll();
+    setTimeout(()=>{ document.getElementById('settingsSheet').style.display='none'; },350);
   };
   window.closeSettings=(e)=>{
     if(e && e.target!==document.getElementById('settingsSheet')) return;
