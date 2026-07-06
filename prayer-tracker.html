@@ -1030,8 +1030,8 @@
           await checkChallengeParam();
           // Preload challenges and friends in background
           preloadChallengesAndFriends();
-          // Re-register FCM token if notifications already granted
-          if(Notification.permission==='granted') registerFCMToken(user.uid);
+          // Re-register FCM token only if user actually has reminders turned on
+          if(Notification.permission==='granted' && localStorage.getItem('notifsEnabled')==='true') registerFCMToken(user.uid);
         }catch(e){ console.error(e); }
       }, 500);
     } else {
@@ -3024,21 +3024,37 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
       updateSettingsNotifUI('denied');
       return;
     }
-    if(state === 'granted'){
-      // Already granted — unsubscribe (remove token from Firestore)
+    // Browser permission (once granted) never goes back to 'default' on its own,
+    // so we track the user's actual on/off choice separately in localStorage.
+    const userWantsOn = localStorage.getItem('notifsEnabled') === 'true';
+
+    if(state === 'granted' && userWantsOn){
+      // Currently ON — turn off: remove token from Firestore
       const uid = auth.currentUser?.uid;
       if(uid){
         try{ await setDoc(doc(db,'fcmTokens',uid),{token:null, updatedAt:Date.now()},{merge:true}); }catch(e){}
       }
       localStorage.removeItem('fcmToken');
+      localStorage.setItem('notifsEnabled','false');
       updateSettingsNotifUI('default');
       return;
     }
-    // state === 'default' — request permission
+
+    if(state === 'granted' && !userWantsOn){
+      // Permission already granted, user wants to turn back on — no need to re-prompt
+      const uid = auth.currentUser?.uid;
+      if(uid) await registerFCMToken(uid);
+      localStorage.setItem('notifsEnabled','true');
+      updateSettingsNotifUI('granted');
+      return;
+    }
+
+    // state === 'default' — request permission for the first time
     const result = await Notification.requestPermission();
     if(result === 'granted'){
       const uid = auth.currentUser?.uid;
       if(uid) await registerFCMToken(uid);
+      localStorage.setItem('notifsEnabled','true');
       updateSettingsNotifUI('granted');
     } else {
       updateSettingsNotifUI('denied');
@@ -3156,7 +3172,9 @@ ${TYPE_LABELS[ch.type]} · ${ch.mode==='strict'?'Group streak':'Individual'} · 
     s.style.display='flex';
     setTimeout(()=>{ s.classList.add('open'); document.getElementById('settingsInner').style.transform='translateY(0)'; },10);
     updateSettingsLocationUI();
-    const notifState = await getNotifPermissionState();
+    const rawState = await getNotifPermissionState();
+    const userWantsOn = localStorage.getItem('notifsEnabled') === 'true';
+    const notifState = (rawState==='granted' && !userWantsOn) ? 'default' : rawState;
     updateSettingsNotifUI(notifState);
   };
   window.closeSettings=(e)=>{
