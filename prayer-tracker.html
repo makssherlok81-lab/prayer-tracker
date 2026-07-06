@@ -2209,6 +2209,10 @@
       dayData[todayKey]=dayData[todayKey]||{};
       dayData[todayKey].ishraq=!dayData[todayKey].ishraq;
       await saveDayData(todayKey);
+    } else if(s.type==='prayer'&&s.id==='tahajjud'){
+      dayData[todayKey]=dayData[todayKey]||{};
+      dayData[todayKey].tahajjud=!dayData[todayKey].tahajjud;
+      await saveDayData(todayKey);
     }
     await buildDailySuggestions();
   }
